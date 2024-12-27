@@ -17,19 +17,19 @@ func InsertPaymentTerm(db *sql.Tx) error {
     EMPLOYEER_CONTACT_NAME, ORGANIZATION_ACTIVITY, FIRST_PRIME_DPP_PAYMENT
 )
 SELECT
-    p.PARTY_ID,
+    p.PARTY_ID,                            -- Relacionar con el PARTY_ID correcto
     CASE t.DESCTPCONDCOBRO
-        WHEN 'CARGO A CUENTA' THEN 2000 -- PAC
-        WHEN 'CARGO A TARJETA' THEN 3000 -- PAT
-        WHEN 'COBRO DIRECTO' THEN 1000 -- DIRECTO
+        WHEN 'CARGO A CUENTA' THEN 2000    -- PAC
+        WHEN 'CARGO A TARJETA' THEN 3000  -- PAT
+        WHEN 'COBRO DIRECTO' THEN 1000    -- DIRECTO
         ELSE NULL
     END AS PAYMENT_TYPE_ID,
     CASE
         WHEN t.DESCTPCONDCOBRO = 'CARGO A TARJETA' THEN 1 -- Simula ID de tarjeta
         ELSE NULL
     END AS CREDIT_CARD_ID,
-    3000 AS CURRENCY_ID,
-    t.NROCONDCOBRO AS ACCOUNT_NBR,
+    3000 AS CURRENCY_ID,                   -- CLP
+    t.NROCONDCOBRO AS ACCOUNT_NBR,         -- Número de cuenta o tarjeta
     NULL AS INTER_ACCOUNT_NBR,
     CASE
         WHEN t.DESCTPCONDCOBRO = 'CARGO A TARJETA' THEN '2028-10-01 00:00:00'
@@ -52,13 +52,13 @@ SELECT
         WHEN 'BBVA' THEN 13
         ELSE NULL
     END AS BANK_ID,
-    1 AS BANK_BRANCH_ID,
+    1 AS BANK_BRANCH_ID,                   -- Valor por defecto
     CASE t.IDPERIODPAGO
-        WHEN '004' THEN 1000
-        WHEN '005' THEN 2000
-        WHEN '006' THEN 3000
-        WHEN '007' THEN 4000
-        WHEN '008' THEN 5000
+        WHEN '004' THEN 1000               -- MENSUAL
+        WHEN '005' THEN 2000               -- TRIMESTRAL
+        WHEN '006' THEN 3000               -- SEMESTRAL
+        WHEN '007' THEN 4000               -- ANUAL
+        WHEN '008' THEN 5000               -- PRIMA ÚNICA
         ELSE NULL
     END AS PERIOD_ID,
     NULL AS FIRSTNAME,
@@ -73,12 +73,13 @@ SELECT
     NULL AS ORGANIZATION_ACTIVITY,
     0 AS FIRST_PRIME_DPP_PAYMENT
 FROM temp_csv_polizas t
-	JOIN temp_csv_asegurados a 
+JOIN temp_csv_asegurados a 
     ON t.RAMO = a.RAMO AND t.NPOLIZA = a.NPOLIZA -- Relación entre las tablas temporales
 JOIN PARTY p 
-    ON p.EMAIL = a.EMAIL -- Relación con PARTY
-WHERE t.CODESTADO = '03';
-	`
+    ON p.EMAIL = a.EMAIL                        -- Relación directa con el PARTY único
+WHERE t.CODESTADO = '03'
+GROUP BY p.PARTY_ID;
+`
 
 	_, err := db.Exec(query)
 	if err != nil {
