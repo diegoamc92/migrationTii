@@ -20,10 +20,10 @@ func LoadConfig() (*Config, error) {
 	port, _ := strconv.Atoi(getEnv("DB_PORT", "3306"))
 
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
+		DBHost:     getEnv("DB_HOST", "dev-vulcanomigracion.cy5rvtfr1tpj.us-east-1.rds.amazonaws.com"),
 		DBUser:     getEnv("DB_USER", "root"),
-		DBPassword: getEnv("DB_PASSWORD", "pass"),
-		DBName:     getEnv("DB_NAME", "table"),
+		DBPassword: getEnv("DB_PASSWORD", "LLPmRkMxAVTCaPbauPQJ"),
+		DBName:     getEnv("DB_NAME", "isb"),
 		DBPort:     port,
 	}, nil
 }

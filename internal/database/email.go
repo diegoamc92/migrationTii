@@ -12,7 +12,7 @@ import (
 //	insertEmailQuery := `
 //	INSERT INTO EMAIL (EMAIL, EMAIL_TYPE_ID, EMAIL_DEFAULT)
 //	SELECT DISTINCT EMAIL, 1, NULL
-//	FROM temp_csv_data
+//	FROM temp_csv_asegurados
 //	WHERE EMAIL IS NOT NULL
 //	ON DUPLICATE KEY UPDATE EMAIL=VALUES(EMAIL);
 //	`
@@ -55,16 +55,16 @@ func InsertEmail(db *sql.Tx) error {
 	insertEmailQuery := `
 	INSERT INTO EMAIL (EMAIL, EMAIL_TYPE_ID, EMAIL_DEFAULT)
 	SELECT DISTINCT EMAIL, 1, NULL
-	FROM temp_csv_data
+	FROM temp_csv_asegurados
 	WHERE EMAIL IS NOT NULL;
 	`
 
 	// Asociar el nuevo EMAIL_ID al PARTY_ID en PARTY_EMAIL
 	insertPartyEmailQuery := `
-	INSERT INTO PARTY_EMAIL (EMAIL_ID, PARTY_ID)
+	INSERT IGNORE INTO PARTY_EMAIL (EMAIL_ID, PARTY_ID)
 	SELECT e.EMAIL_ID, p.PARTY_ID
 	FROM EMAIL e
-	JOIN temp_csv_data t ON e.EMAIL = t.EMAIL
+	JOIN temp_csv_asegurados t ON e.EMAIL = t.EMAIL
 	JOIN PARTY p ON p.PARTY_ID = (
 	    SELECT PARTY_ID
 	    FROM PARTY

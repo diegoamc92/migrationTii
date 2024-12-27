@@ -30,7 +30,7 @@ func InsertPersonData(db *sql.Tx) error {
 		t.APEPATERNO AS LAST_NAME,
 		t.APEMATERNO AS MOTHER_LAST_NAME,
 		t.FECNAC AS BIRTH_DATE
-	FROM temp_csv_data t
+	FROM temp_csv_asegurados t
 	JOIN PARTY p ON p.EMAIL = t.EMAIL
 	WHERE t.RUT IS NOT NULL
 	ON DUPLICATE KEY UPDATE

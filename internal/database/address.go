@@ -25,7 +25,7 @@ func InsertAddress(db *sql.Tx) error {
     	CONCAT(t.REGION, ', ', t.COMUNA, ', ', t.CIUDAD) AS ADDRESS_COMMENT,
     	pr.PROVINCE_ID AS PROVINCE_ID,
     	NULL AS ADDRESS_DEFAULT
-		FROM temp_csv_data t
+		FROM temp_csv_asegurados t
          LEFT JOIN PROVINCE pr ON pr.PROVINCE_DESC = t.COMUNA -- Mapeo de provincia
          LEFT JOIN CITY c ON c.CITY_NAME = t.CIUDAD; -- Mapeo de ciudad
 	`
@@ -41,10 +41,10 @@ func InsertAddress(db *sql.Tx) error {
 // Associate Party Address asocia las direcciones con PARTY en la tabla PARTY_ADDRESS.
 func AssociatePartyAddress(db *sql.Tx) error {
 	associateQuery := `
-	INSERT INTO PARTY_ADDRESS (ADDRESS_ID, PARTY_ID)
+	INSERT IGNORE INTO PARTY_ADDRESS (ADDRESS_ID, PARTY_ID)
 	SELECT a.ADDRESS_ID, p.PARTY_ID
 	FROM ADDRESS a
-		JOIN temp_csv_data t
+		JOIN temp_csv_asegurados t
 			ON a.ADDRESS_STREET = TRIM(REGEXP_REPLACE(t.DIRECCION, '[0-9].*$', ''))
 			AND a.ADDRESS_NUMBER = REGEXP_SUBSTR(t.DIRECCION, '[0-9]+')
 		JOIN PARTY p ON p.EMAIL = t.EMAIL

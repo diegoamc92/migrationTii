@@ -72,14 +72,12 @@ SELECT
     NULL AS EMPLOYEER_CONTACT_NAME,
     NULL AS ORGANIZATION_ACTIVITY,
     0 AS FIRST_PRIME_DPP_PAYMENT
-FROM temp_polizas_data t
-JOIN CONTRACT_HEADER c ON c.CONTRACT_ID = (
-    SELECT CONTRACT_ID
-    FROM CONTRACT_HEADER ch
-    WHERE ch.CONTRACT_ID = t.NPOLIZA
-    LIMIT 1
-)
-JOIN PARTY p ON p.PARTY_ID = c.HOLDER_PARTY_ID;
+FROM temp_csv_polizas t
+	JOIN temp_csv_asegurados a 
+    ON t.RAMO = a.RAMO AND t.NPOLIZA = a.NPOLIZA -- Relación entre las tablas temporales
+JOIN PARTY p 
+    ON p.EMAIL = a.EMAIL -- Relación con PARTY
+WHERE t.CODESTADO = '03';
 	`
 
 	_, err := db.Exec(query)

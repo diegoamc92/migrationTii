@@ -12,24 +12,13 @@ func InsertPartyData(db *sql.Tx) error {
 	insertPartyQuery := `
 	INSERT INTO PARTY (EMAIL, DATE_CREATED, PARTY_SEARCH_AS, CIIU_ID, NATIONALITY, PARTY_ACTIVITY_ID, PRACTICE_ID, 
 	                   PARTY_CLASS_ID, COUNTRY_OF_BIRTH, NATIONALITY_DETAIL)
-	SELECT COALESCE(EMAIL, 'migracion@bicevida.cl'),
+	SELECT DISTINCT COALESCE(EMAIL, 'migracion@bicevida.cl'),
 	       NOW(),
 	       CONCAT(APEPATERNO, ' ', APEMATERNO, ', ', NOMBRES),
 	       1000, 1, 2, 1, 1000, 136, 136
-	FROM temp_cleaned_data t
-	WHERE NOT EXISTS (
-	    SELECT 1
-	    FROM PARTY p
-	    JOIN PARTY_IDENTIFICATION pi ON p.PARTY_ID = pi.PARTY_ID
-	    JOIN IDENTIFICATION i ON pi.IDENTIFICATION_ID = i.IDENTIFICATION_ID
-	    WHERE i.IDENTIFICATION = CONCAT(
-	            TRIM(LEADING '0' FROM REPLACE(SUBSTRING_INDEX(t.RUT, '-', 1), '.', '')),
-	            CASE
-	                WHEN RIGHT(t.RUT, 1) = 'K' THEN 'K'
-	                ELSE RIGHT(t.RUT, 1)
-	            END
-	    )
-	);
+	FROM temp_csv_asegurados t
+	WHERE EMAIL IS NOT NULL
+	ON DUPLICATE KEY UPDATE EMAIL=VALUES(EMAIL);
 	`
 
 	// Ejecutar la query
@@ -51,3 +40,10 @@ func InsertPartyData(db *sql.Tx) error {
 	fmt.Printf("Total de registros insertados en PARTY: %d\n", totalInsertados)
 	return nil
 }
+
+//INSERT INTO PARTY (EMAIL, DATE_CREATED, PARTY_SEARCH_AS)
+//SELECT DISTINCT COALESCE(EMAIL, 'migracion@bicevida.cl'), NOW(),
+//CONCAT(APEPATERNO, ' ', APEMATERNO, ', ', NOMBRES)
+//FROM temp_csv_asegurados
+//WHERE EMAIL IS NOT NULL
+//ON DUPLICATE KEY UPDATE EMAIL=VALUES(EMAIL);

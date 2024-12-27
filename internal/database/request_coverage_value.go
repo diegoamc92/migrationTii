@@ -46,7 +46,7 @@ SELECT
     0.0741 AS TAX_VALUE          -- Valor de impuesto
 FROM REQUEST r
 JOIN CONTRACT_HEADER c ON r.CONTRACT_ID = c.CONTRACT_ID
-JOIN temp_polizas_data t ON t.NPOLIZA = c.CONTRACT_ID
+JOIN temp_csv_polizas t ON t.NPOLIZA = c.CONTRACT_ID
 WHERE t.CODESTADO = '03'; -- Solo pólizas vigentes
 	`
 

@@ -54,7 +54,7 @@ SELECT
     0.46409736 AS PREMIUM,                  -- Prima fija
     0.38999736 AS BASE_PREMIUM,             -- Prima base fija
     0.0741 AS TAX_VALUE                     -- Valor de impuesto fijo
-FROM temp_polizas_data t
+FROM temp_csv_polizas t
 WHERE t.NPOLIZA LIKE '%00' AND t.CODESTADO = '03';`
 
 	_, err := db.Exec(query)

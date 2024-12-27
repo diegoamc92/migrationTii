@@ -13,7 +13,7 @@ func CreateTempIssuanceDates(db *sql.Tx) error {
 	SELECT
 		NPOLORI,
 		MIN(FINIVIG) AS CONTRACT_ISSUANCE_DATE
-	FROM temp_polizas_data
+	FROM temp_csv_polizas
 	WHERE CODESTADO = '03' -- Solo "EN VIGOR"
 	  AND NPOLIZA LIKE '%00' -- Identificar NPOLIZA raíz
 	GROUP BY NPOLORI;
@@ -67,11 +67,16 @@ func InsertContractHeader(db *sql.Tx) error {
 		t.FTERVIG AS CONTRACT_TO,            -- Fecha fin de vigencia
 		4000 AS CURRENCY_ID,                 -- Moneda CLP
 		i.CONTRACT_ISSUANCE_DATE             -- Fecha de emisión (primera FINIVIG)
-	FROM temp_polizas_data t
-	JOIN PAYMENT_TERM pt ON pt.ACCOUNT_NBR = t.NROCONDCOBRO
-	JOIN PARTY p ON p.PARTY_ID = pt.PARTY_ID
-	LEFT JOIN temp_issuance_dates i ON i.NPOLORI = t.NPOLIZA
-	WHERE t.CODESTADO = '03'; -- Solo contratos "EN VIGOR"
+FROM temp_csv_polizas t
+JOIN temp_csv_asegurados a 
+    ON t.RAMO = a.RAMO AND t.NPOLIZA = a.NPOLIZA -- Relación entre las tablas temporales
+JOIN PARTY p 
+    ON p.EMAIL = a.EMAIL -- Relación con PARTY
+JOIN PAYMENT_TERM pt 
+    ON pt.PARTY_ID = p.PARTY_ID AND pt.ACCOUNT_NBR = t.NROCONDCOBRO -- Relación con Payment Term
+LEFT JOIN temp_issuance_dates i 
+    ON i.NPOLORI = t.NPOLIZA
+WHERE t.CODESTADO = '03'; -- Solo pólizas vigentes
 	`
 
 	_, err := db.Exec(query)

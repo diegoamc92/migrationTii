@@ -59,7 +59,7 @@ FROM (
          UNION ALL SELECT 'VALID_QUESTIONNAIRE', 'VALID_QUESTIONNAIRE', 'true'
          UNION ALL SELECT 'VALID_REINSURANCE_AMOUNT_VALIDATION', 'VALID_REINSURANCE_AMOUNT_VALIDATION', 'true'
      ) AS k
-         JOIN temp_polizas_data t ON CONCAT(t.RAMO, '-', t.NPOLORI) = CONCAT(t.RAMO, '-', t.NPOLIZA) -- Asociar NPOLORI con el POLICY_ID
+         JOIN temp_csv_polizas t ON CONCAT(t.RAMO, '-', t.NPOLORI) = CONCAT(t.RAMO, '-', t.NPOLIZA) -- Asociar NPOLORI con el POLICY_ID
 WHERE t.CODESTADO = '03'; -- Asociar el REQUEST del CSV con el POLICY_ID
 	`
 

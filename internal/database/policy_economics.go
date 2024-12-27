@@ -62,7 +62,7 @@ FROM (
          UNION ALL SELECT 28000, 0
          UNION ALL SELECT 29000, 5.1056
      ) AS ei
-         JOIN temp_polizas_data t ON CONCAT(t.RAMO, '-', t.NPOLORI) = CONCAT(t.RAMO, '-', t.NPOLIZA)
+         JOIN temp_csv_polizas t ON CONCAT(t.RAMO, '-', t.NPOLORI) = CONCAT(t.RAMO, '-', t.NPOLIZA)
 WHERE t.CODESTADO = '03';
     `
 

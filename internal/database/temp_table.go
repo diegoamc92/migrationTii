@@ -17,7 +17,7 @@ func fileExists(filePath string) bool {
 // Create TempTables crea tablas temporales para asegurados y pólizas.
 func CreateTempTable(db *sql.Tx) error {
 	queries := []string{
-		`CREATE TEMPORARY TABLE temp_csv_data (
+		`CREATE TEMPORARY TABLE temp_csv_asegurados (
 			RAMO INT, NPOLIZA VARCHAR(50), NOMBRES VARCHAR(255),
 			APEMATERNO VARCHAR(100), APEPATERNO VARCHAR(100), RUT VARCHAR(50),
 			FECNAC DATE, CLAVESEXO INT, DESCSEXO VARCHAR(50), CODCIVIL INT,
@@ -26,7 +26,7 @@ func CreateTempTable(db *sql.Tx) error {
 			CODCOMUNA INT, COMUNA VARCHAR(100), CODCIUDAD INT, CIUDAD VARCHAR(100)
 		) CHARSET=utf8mb4;`,
 
-		`CREATE TEMPORARY TABLE temp_polizas_data (
+		`CREATE TEMPORARY TABLE temp_csv_polizas (
 			RAMO INT, NPOLIZA VARCHAR(50), REQUEST VARCHAR(50), CODESTADO VARCHAR(10),
 			ESTADO VARCHAR(50), NPOLORI VARCHAR(50), FINIVIG DATE, FTERVIG DATE,
 			IDCONDCOBRO VARCHAR(50), DESCCONDCOBRO VARCHAR(100), TPCONDCOBRO VARCHAR(10),
@@ -49,30 +49,30 @@ func CreateTempTable(db *sql.Tx) error {
 // Create Cleaned Temp Table crea una tabla temporal con datos únicos.
 func CreateCleanedTempTable(db *sql.Tx) error {
 	query := `
-	CREATE TEMPORARY TABLE temp_cleaned_data AS
+	CREATE TEMPORARY TABLE temp_cleaned_data_asegurados AS
 	SELECT RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO,
 	       DESCSEXO, CODCIVIL, ESTCIVIL,
 	       MAX(TELEFONO)  AS TELEFONO,
 	       MAX(EMAIL)     AS EMAIL,
 	       MAX(DIRECCION) AS DIRECCION,
 	       CODREGION, REGION, CODCOMUNA, COMUNA, CODCIUDAD, CIUDAD
-	FROM temp_csv_data
+	FROM temp_csv_asegurados
 	GROUP BY RUT;
 	`
 
-	fmt.Println("Creando tabla limpia temporal (temp_cleaned_data)...")
+	fmt.Println("Creando tabla limpia temporal (temp_cleaned_data_asegurados)...")
 
 	if _, err := db.Exec(query); err != nil {
-		return fmt.Errorf("error creando temp_cleaned_data: %v", err)
+		return fmt.Errorf("error creando temp_cleaned_data_asegurados: %v", err)
 	}
-	fmt.Println("Tabla temp_cleaned_data creada correctamente.")
+	fmt.Println("Tabla temp_cleaned_data_asegurados creada correctamente.")
 	log.Println(query)
 	return nil
 }
 
-// Load AseguradosData carga los datos procesados a la tabla temp_csv_data.
+// Load AseguradosData carga los datos procesados a la tabla temp_csv_asegurados.
 func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
-	query := `INSERT INTO temp_csv_data (
+	query := `INSERT INTO temp_csv_asegurados (
 		RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO, 
 		ESTCIVIL, TELEFONO, EMAIL, DIRECCION, CODREGION, REGION, CODCOMUNA, 
 		COMUNA, CODCIUDAD, CIUDAD
@@ -82,7 +82,7 @@ func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
 	if err != nil {
 		return fmt.Errorf("error preparando la consulta: %v", err)
 	}
-	//defer stmt.Close()
+	defer stmt.Close()
 
 	for i, row := range records {
 
@@ -102,14 +102,14 @@ func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
 			return fmt.Errorf("error insertando fila: %v", err)
 		}
 	}
-	log.Println("Datos de asegurados insertados correctamente en temp_csv_data.")
+	log.Println("Datos de asegurados insertados correctamente en temp_csv_asegurados.")
 	log.Println(query)
 	return nil
 }
 
-// Load PolizasData carga los datos procesados a la tabla temp_polizas_data.
+// Load PolizasData carga los datos procesados a la tabla temp_csv_polizas.
 func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
-	query := `INSERT INTO temp_polizas_data (
+	query := `INSERT INTO temp_csv_polizas (
 		RAMO, NPOLIZA, REQUEST, CODESTADO, ESTADO, NPOLORI, FINIVIG, FTERVIG,
 		IDCONDCOBRO, DESCCONDCOBRO, TPCONDCOBRO, DESCTPCONDCOBRO, NROCONDCOBRO, IDPERIODPAGO, DESCPERPAGO
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
@@ -118,7 +118,7 @@ func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
 	if err != nil {
 		return fmt.Errorf("error preparando la consulta: %v", err)
 	}
-	//defer stmt.Close()
+	defer stmt.Close()
 
 	for _, row := range data {
 		_, err := stmt.Exec(
@@ -145,7 +145,7 @@ func CreateTempOriginalPolicyTable(db *sql.Tx) error {
         NPOLORI,
         MIN(FINIVIG) AS POLICY_ISSUANCE_DATE,
         MIN(FTERVIG) AS POLICY_ENDORSEMENT_DATE_TO
-    FROM temp_polizas_data
+    FROM temp_csv_polizas
     WHERE CODESTADO = '03'
     GROUP BY RAMO, NPOLORI;`
 	_, err := db.Exec(query)

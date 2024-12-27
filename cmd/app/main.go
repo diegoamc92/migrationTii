@@ -99,7 +99,7 @@ func main() {
 	}
 
 	if err := database.LoadAseguradosData(tx, aseguradosData); err != nil {
-		log.Fatalf("Error insertando datos de asegurados en temp_csv_data: %v", err)
+		log.Fatalf("Error insertando datos de asegurados en temp_csv_asegurados: %v", err)
 	}
 
 	r.Add(fmt.Sprintf("Datos de asegurados cargados en %v.", time.Since(blockStart)))
@@ -124,6 +124,15 @@ func main() {
 	if err := database.CreateTempCleanedRUT(tx); err != nil {
 		return
 	}
+
+	if err := database.InsertInsuredData(tx); err != nil {
+		log.Fatalf("Error insertando INSURED: %v", err)
+	}
+
+	if err := database.InsertPolicyHolderData(tx); err != nil {
+		log.Fatalf("Error insertando POLICY_HOLDER: %v", err)
+	}
+
 	if err := database.InsertIdentification(tx); err != nil {
 		//handleError(database.InsertIdentification(tx), "Error insertando IDENTIFICATION", r)
 		log.Fatalf("Error insertando IDENTIFICATION: %v", err)
@@ -245,16 +254,16 @@ func main() {
 	r.Add(fmt.Sprintf("Datos de POLICY procesados en %v.", time.Since(blockStart)))
 
 	// 10. Insertar en BILLING_STATEMENT
-	log.Println("Procesando datos de BILLING_STATEMENT...")
-	blockStart = time.Now()
-
-	log.Printf("Insertando en BILLING_STATEMENT...")
-	if err := database.InsertBillingStatement(tx); err != nil {
-		log.Fatalf("Error insertando en BILLING_STATEMENT: %v", err)
-	}
-	log.Printf("Datos insertados en BILLING_STATEMENT correctamente.")
-
-	r.Add(fmt.Sprintf("Datos de BILLING_STATEMENT procesados en %v.", time.Since(blockStart)))
+	//log.Println("Procesando datos de BILLING_STATEMENT...")
+	//blockStart = time.Now()
+	//
+	//log.Printf("Insertando en BILLING_STATEMENT...")
+	//if err := database.InsertBillingStatement(tx); err != nil {
+	//	log.Fatalf("Error insertando en BILLING_STATEMENT: %v", err)
+	//}
+	//log.Printf("Datos insertados en BILLING_STATEMENT correctamente.")
+	//
+	//r.Add(fmt.Sprintf("Datos de BILLING_STATEMENT procesados en %v.", time.Since(blockStart)))
 
 	// 11. Confirmar transacción
 	log.Println("Intentando confirmar la transacción...")

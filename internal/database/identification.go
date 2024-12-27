@@ -19,7 +19,7 @@ func CreateTempCleanedRUT(db *sql.Tx) error {
 	                ELSE RIGHT(RUT, 1)
 	            END
 	    ) AS CLEAN_RUT
-	FROM temp_csv_data
+	FROM temp_csv_asegurados
 	WHERE RUT IS NOT NULL AND RUT != '';
 	`
 
@@ -53,10 +53,10 @@ func InsertIdentification(db *sql.Tx) error {
 // Associate Party Identification asocia PARTY con IDENTIFICATION.
 func AssociatePartyIdentification(db *sql.Tx) error {
 	query := `
-	INSERT INTO PARTY_IDENTIFICATION (PARTY_ID, IDENTIFICATION_ID)
+	INSERT IGNORE INTO PARTY_IDENTIFICATION (PARTY_ID, IDENTIFICATION_ID)
 	SELECT p.PARTY_ID, i.IDENTIFICATION_ID
 	FROM PARTY p
-	JOIN temp_csv_data t ON p.PARTY_SEARCH_AS = CONCAT_WS(', ', t.APEPATERNO, t.APEMATERNO, t.NOMBRES)
+	JOIN temp_csv_asegurados t ON p.PARTY_SEARCH_AS = CONCAT_WS(', ', t.APEPATERNO, t.APEMATERNO, t.NOMBRES)
 	JOIN IDENTIFICATION i ON i.IDENTIFICATION = CONCAT(
 	            TRIM(LEADING '0' FROM REPLACE(SUBSTRING_INDEX(t.RUT, '-', 1), '.', '')),
 	            CASE

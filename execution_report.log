@@ -1,16 +1,15 @@
-[2024-12-24 15:46:54] Configuración cargada correctamente.
-[2024-12-24 15:46:54] Conexión a la base de datos establecida.
-[2024-12-24 15:46:54] Transacción iniciada.
-[2024-12-24 15:46:55] Tabla temporal creada en 266.7828ms.
-[2024-12-24 15:46:55] Tabla temporal limpia creada en 133.6307ms.
-[2024-12-24 15:47:06] Datos de asegurados cargados en 11.013229s.
-[2024-12-24 15:47:17] Datos de pólizas cargados en 10.927243s.
-[2024-12-24 15:47:23] Datos de asegurados procesados en 6.6361454s.
-[2024-12-24 15:47:24] Datos de pólizas y contratos procesados en 310.5995ms.
-[2024-12-24 15:47:24] Datos de REQUEST procesados en 543.483ms.
-[2024-12-24 15:47:25] Datos de POLICY procesados en 668.051ms.
-[2024-12-24 15:47:25] Datos de BILLING_STATEMENT procesados en 155.2347ms.
-[2024-12-24 15:47:25] Proceso completado exitosamente.
-[2024-12-24 15:47:25] Transacción completada exitosamente en 30.9150353s.
-Tiempo total de ejecución: 31.7270804s
+[2024-12-27 18:41:14] Configuración cargada correctamente.
+[2024-12-27 18:41:15] Conexión a la base de datos establecida.
+[2024-12-27 18:41:15] Transacción iniciada.
+[2024-12-27 18:41:15] Tabla temporal creada en 252.1343ms.
+[2024-12-27 18:41:15] Tabla temporal limpia creada en 128.6774ms.
+[2024-12-27 18:41:26] Datos de asegurados cargados en 10.6578755s.
+[2024-12-27 18:41:37] Datos de pólizas cargados en 10.6674142s.
+[2024-12-27 18:41:45] Datos de asegurados procesados en 8.0205472s.
+[2024-12-27 18:41:45] Datos de pólizas y contratos procesados en 281.4406ms.
+[2024-12-27 18:41:45] Datos de REQUEST procesados en 514.1782ms.
+[2024-12-27 18:41:46] Datos de POLICY procesados en 637.1543ms.
+[2024-12-27 18:41:46] Proceso completado exitosamente.
+[2024-12-27 18:41:46] Transacción completada exitosamente en 31.4151935s.
+Tiempo total de ejecución: 32.0983769s
 Estado final: ÉXITO

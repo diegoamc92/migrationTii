@@ -56,7 +56,7 @@ SELECT
     NULL AS SUB_TYPE_ID,
     NULL AS CLIENT_CODE,
     NULL AS COMMENTS
-FROM temp_polizas_data t
+FROM temp_csv_polizas t
          JOIN PAYMENT_TERM pt ON pt.ACCOUNT_NBR = t.NROCONDCOBRO -- Asociar con Payment Term
          JOIN CONTRACT_HEADER c ON c.CONTRACT_ID = pt.PAYMENT_TERM_ID -- Asociar con el contrato
 WHERE t.CODESTADO = '03';
