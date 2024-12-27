@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"migrationTii/internal/data_loader"
 )
 
 // Create Temp Cleaned RUT crea una tabla temporal con RUT limpios.
@@ -28,7 +28,8 @@ func CreateTempCleanedRUT(db *sql.Tx) error {
 		return fmt.Errorf("error creando temp_cleaned_rut: %v", err)
 	}
 	fmt.Println("Tabla temp_cleaned_rut creada correctamente.")
-	log.Println(query)
+	data_loader.AddToSqlScript("-- Create Temp Cleaned RUT crea una tabla temporal con RUT limpios.")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
 
@@ -46,7 +47,8 @@ func InsertIdentification(db *sql.Tx) error {
 		return fmt.Errorf("error insertando en IDENTIFICATION: %v", err)
 	}
 	fmt.Println("Datos insertados en IDENTIFICATION correctamente.")
-	log.Println(query)
+	data_loader.AddToSqlScript("-- Insert Identification inserta los valores limpios en IDENTIFICATION.")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
 
@@ -73,6 +75,7 @@ func AssociatePartyIdentification(db *sql.Tx) error {
 		return fmt.Errorf("error asociando PARTY_IDENTIFICATION: %v", err)
 	}
 	fmt.Println("PARTY_IDENTIFICATION asociada correctamente.")
-	log.Println(query)
+	data_loader.AddToSqlScript("\n-- Associate Party Identification asocia PARTY con IDENTIFICATION.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }

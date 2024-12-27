@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"migrationTii/internal/data_loader"
 	"os"
 	"strings"
 )
@@ -30,7 +31,7 @@ func CreateTempTable(db *sql.Tx) error {
 			RAMO INT, NPOLIZA VARCHAR(50), REQUEST VARCHAR(50), CODESTADO VARCHAR(10),
 			ESTADO VARCHAR(50), NPOLORI VARCHAR(50), FINIVIG DATE, FTERVIG DATE,
 			IDCONDCOBRO VARCHAR(50), DESCCONDCOBRO VARCHAR(100), TPCONDCOBRO VARCHAR(10),
-			DESCTPCONDCOBRO VARCHAR(50),NROCONDCOBRO INT, IDPERIODPAGO VARCHAR(10), DESCPERPAGO VARCHAR(50)
+			DESCTPCONDCOBRO VARCHAR(50),NROCONDCOBRO VARCHAR(50), IDPERIODPAGO VARCHAR(10), DESCPERPAGO VARCHAR(50)
 		);`,
 	}
 
@@ -42,7 +43,8 @@ func CreateTempTable(db *sql.Tx) error {
 		}
 	}
 	fmt.Println("Tablas temporales creadas exitosamente.")
-	log.Println(queries)
+	data_loader.AddToSqlScript("\n-- Create TempTables crea tablas temporales para asegurados y pólizas.\n\n")
+	data_loader.AddToSqlScript(strings.Join(queries, "\n"))
 	return nil
 }
 
@@ -66,7 +68,8 @@ func CreateCleanedTempTable(db *sql.Tx) error {
 		return fmt.Errorf("error creando temp_cleaned_data: %v", err)
 	}
 	fmt.Println("Tabla temp_cleaned_data creada correctamente.")
-	log.Println(query)
+	data_loader.AddToSqlScript("\n-- Create Cleaned Temp Table crea una tabla temporal con datos únicos.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
 
@@ -84,10 +87,11 @@ func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
 	}
 	//defer stmt.Close()
 
+	data_loader.AddToSqlScript("\n-- Load AseguradosData carga los datos procesados a la tabla temp_csv_data.\n\n")
 	for i, row := range records {
 
-		queryData := strings.Replace(query, "?", "'%v'", -1)
-		log.Println(fmt.Sprintf(queryData, row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
+		queryData := strings.Replace(query, "?", "'%v'", -1) + "\n\n"
+		data_loader.AddToSqlScript(fmt.Sprintf(queryData, row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
 			row["FECNAC"], row["CLAVESEXO"], row["ESTCIVIL"], row["TELEFONO"], row["EMAIL"], row["DIRECCION"],
 			row["CODREGION"], row["REGION"], row["CODCOMUNA"], row["COMUNA"], row["CODCIUDAD"], row["CIUDAD"]))
 
@@ -103,7 +107,6 @@ func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
 		}
 	}
 	log.Println("Datos de asegurados insertados correctamente en temp_csv_data.")
-	log.Println(query)
 	return nil
 }
 
@@ -120,20 +123,25 @@ func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
 	}
 	//defer stmt.Close()
 
+	data_loader.AddToSqlScript("\n-- Load PolizasData carga los datos procesados a la tabla temp_polizas_data.\n\n")
 	for _, row := range data {
+		queryData := strings.Replace(query, "?", "'%v'", -1) + "\n\n"
+		data_loader.AddToSqlScript(fmt.Sprintf(queryData, row["RAMO"], row["NPOLIZA"], row["REQUEST"], row["CODESTADO"],
+			row["ESTADO"], row["NPOLORI"], row["FINIVIG"], row["FTERVIG"],
+			row["IDCONDCOBRO"], row["DESCCONDCOBRO"], row["TPCONDCOBRO"],
+			row["DESCTPCONDCOBRO"], row["NROCONDCOBRO"], row["IDPERIODPAGO"], row["DESCPERPAGO"]))
+
 		_, err := stmt.Exec(
 			row["RAMO"], row["NPOLIZA"], row["REQUEST"], row["CODESTADO"],
 			row["ESTADO"], row["NPOLORI"], row["FINIVIG"], row["FTERVIG"],
 			row["IDCONDCOBRO"], row["DESCCONDCOBRO"], row["TPCONDCOBRO"],
 			row["DESCTPCONDCOBRO"], row["NROCONDCOBRO"], row["IDPERIODPAGO"], row["DESCPERPAGO"],
 		)
-		log.Println(row)
 		if err != nil {
 			return fmt.Errorf("error insertando pólizas: %v", err)
 		}
 	}
 	fmt.Println("Datos de pólizas insertados correctamente.")
-	log.Println(query)
 	return nil
 }
 
@@ -153,5 +161,7 @@ func CreateTempOriginalPolicyTable(db *sql.Tx) error {
 		return fmt.Errorf("error creando temp_original_policy: %v", err)
 	}
 	fmt.Println("Tabla temporal temp_original_policy creada correctamente.")
+	data_loader.AddToSqlScript("\n-- creando temp_original_policy\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }

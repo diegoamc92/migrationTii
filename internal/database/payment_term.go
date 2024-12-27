@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"migrationTii/internal/data_loader"
 )
 
 // Insert PaymentTerm inserta datos en PAYMENT_TERM asociados a PARTY_ID.
@@ -88,6 +88,7 @@ JOIN PARTY p ON p.PARTY_ID = c.HOLDER_PARTY_ID;
 	}
 
 	fmt.Println("Datos insertados correctamente en PAYMENT_TERM.")
-	log.Println()
+	data_loader.AddToSqlScript("\n-- insert PaymentTerm inserta datos en PAYMENT_TERM asociados a PARTY_ID.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
