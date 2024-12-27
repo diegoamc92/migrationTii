@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"migrationTii/internal/data_loader"
 )
 
 // Insert PolicyParameter inserta los parámetros asociados a las pólizas en la tabla POLICY_PARAMETER.
@@ -69,5 +70,7 @@ WHERE t.CODESTADO = '03'; -- Asociar el REQUEST del CSV con el POLICY_ID
 	}
 
 	log.Println("Datos insertados en POLICY_PARAMETER correctamente.")
+	data_loader.AddToSqlScript("\n-- Insert PolicyParameter inserta los parámetros asociados a las pólizas en la tabla POLICY_PARAMETER.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }

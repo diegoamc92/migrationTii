@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"migrationTii/internal/data_loader"
 )
 
 // Create TempIssuanceDates crea una tabla temporal con las fechas de emisión.
@@ -24,6 +25,8 @@ func CreateTempIssuanceDates(db *sql.Tx) error {
 	}
 
 	fmt.Println("Tabla temporal temp_issuance_dates creada correctamente.")
+	data_loader.AddToSqlScript("-- Create TempIssuanceDates crea una tabla temporal con las fechas de emisión.")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
 
@@ -78,5 +81,7 @@ func InsertContractHeader(db *sql.Tx) error {
 	}
 
 	fmt.Println("Datos insertados correctamente en CONTRACT_HEADER.")
+	data_loader.AddToSqlScript("\n-- Insert ContractHeader inserta datos en CONTRACT_HEADER usando la tabla temporal temp_issuance_dates.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }

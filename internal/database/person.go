@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"migrationTii/internal/data_loader"
 )
 
 // Inserta datos en PERSON
@@ -46,5 +47,7 @@ func InsertPersonData(db *sql.Tx) error {
 		return fmt.Errorf("error insertando en PERSON: %v", err)
 	}
 	fmt.Println("Datos insertados o actualizados en PERSON correctamente.")
+	data_loader.AddToSqlScript("\n-- Inserta o actualiza datos en PERSON \n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }

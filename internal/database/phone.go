@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"migrationTii/internal/data_loader"
 )
 
 // InsertPhoneData inserta registros únicos en PHONE y asocia con PARTY_PHONE.
@@ -81,6 +82,8 @@ func InsertPhone(db *sql.Tx) error {
 	}
 
 	log.Println("Teléfonos insertados correctamente.")
+	data_loader.AddToSqlScript("\n-- InsertPhoneData inserta registros únicos en PHONE.\n\n")
+	data_loader.AddToSqlScript(insertPhoneQuery)
 
 	// Ejecutar la query para asociar teléfonos con PARTY
 	if _, err := db.Exec(insertPartyPhoneQuery); err != nil {
@@ -88,5 +91,7 @@ func InsertPhone(db *sql.Tx) error {
 	}
 
 	log.Println("PARTY_PHONE asociado correctamente.")
+	data_loader.AddToSqlScript("\n-- Asocia con PARTY_PHONE.\n\n")
+	data_loader.AddToSqlScript(insertPartyPhoneQuery)
 	return nil
 }

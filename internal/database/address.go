@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"migrationTii/internal/data_loader"
 )
 
 // Insert Address inserta datos únicos en la tabla ADDRESS.
@@ -20,19 +21,21 @@ func InsertAddress(db *sql.Tx) error {
 			WHEN DIRECCION REGEXP 'depto|piso' THEN SUBSTRING_INDEX(DIRECCION, ' ', -1)
 			ELSE NULL
 		END AS ADDRESS_APARTMENT,
-		c.id AS CITY_ID,
-		CONCAT(t.REGION, ', ', t.COMUNA, ', ', t.CIUDAD) AS ADDRESS_COMMENT,
-		pr.id AS PROVINCE_ID,
-		NULL AS ADDRESS_DEFAULT
-	FROM temp_csv_data t
-		LEFT JOIN province pr ON pr.name = t.COMUNA -- Mapeo de provincia
-		LEFT JOIN city c ON c.name = t.CIUDAD; -- Mapeo de ciudad
+		c.CITY_ID AS CITY_ID,
+    	CONCAT(t.REGION, ', ', t.COMUNA, ', ', t.CIUDAD) AS ADDRESS_COMMENT,
+    	pr.PROVINCE_ID AS PROVINCE_ID,
+    	NULL AS ADDRESS_DEFAULT
+		FROM temp_csv_data t
+         LEFT JOIN PROVINCE pr ON pr.PROVINCE_DESC = t.COMUNA -- Mapeo de provincia
+         LEFT JOIN CITY c ON c.CITY_NAME = t.CIUDAD; -- Mapeo de ciudad
 	`
 
 	if _, err := db.Exec(insertAddressQuery); err != nil {
 		return fmt.Errorf("error insertando en ADDRESS: %v", err)
 	}
 	fmt.Println("Datos insertados en ADDRESS correctamente.")
+	data_loader.AddToSqlScript("\n-- Insert Address inserta datos únicos en la tabla ADDRESS.\n\n")
+	data_loader.AddToSqlScript(insertAddressQuery)
 	return nil
 }
 
@@ -53,5 +56,7 @@ func AssociatePartyAddress(db *sql.Tx) error {
 		return fmt.Errorf("error asociando PARTY_ADDRESS: %v", err)
 	}
 	fmt.Println("PARTY_ADDRESS asociado correctamente.")
+	data_loader.AddToSqlScript("\n--  Associate Party Address asocia las direcciones con PARTY en la tabla PARTY_ADDRESS.\n\n")
+	data_loader.AddToSqlScript(associateQuery)
 	return nil
 }

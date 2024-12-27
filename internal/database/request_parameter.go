@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"migrationTii/internal/data_loader"
 )
 
 // RequestParameter inserta valores en la tabla REQUEST_COVERAGE_VALUE.
@@ -21,7 +22,7 @@ SELECT
     CASE
         WHEN param.REQUEST_PARAMETER_KEY = 'PAYMENT_DATE' THEN DATE_FORMAT(ch.CONTRACT_ISSUANCE_DATE, '%d/%m/%Y')
         ELSE param.REQUEST_PARAMETER_VALUE
-        END AS REQUEST_PARAMETER_VALUE                       -- Valor del parámetro, ajustando PAYMENT_DATE
+    END AS REQUEST_PARAMETER_VALUE                       -- Valor del parámetro, ajustando PAYMENT_DATE
 FROM (
          SELECT 'BELONGS_TO_BLACK_LIST' AS REQUEST_PARAMETER_KEY, 'BELONGS_TO_BLACK_LIST' AS REQUEST_PARAMETER_DESC, 'false' AS REQUEST_PARAMETER_VALUE UNION ALL
          SELECT 'BLACK_LIST_RESPONSE_CODE', 'BLACK_LIST_RESPONSE_CODE', '0' UNION ALL
@@ -50,6 +51,12 @@ FROM (
          JOIN CONTRACT_HEADER ch ON ch.CONTRACT_ID = r.CONTRACT_ID
 WHERE r.REQUEST_ID = (
     SELECT MAX(REQUEST_ID) FROM REQUEST -- Selecciona el REQUEST_ID más reciente
+)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM REQUEST_PARAMETER rp
+    WHERE rp.REQUEST_ID = r.REQUEST_ID
+      AND rp.REQUEST_PARAMETER_KEY = param.REQUEST_PARAMETER_KEY
 );
 	`
 
@@ -59,5 +66,7 @@ WHERE r.REQUEST_ID = (
 	}
 
 	fmt.Println("Datos insertados en REQUEST_PARAMETER correctamente.")
+	data_loader.AddToSqlScript("\n-- RequestParameter inserta valores en la tabla REQUEST_COVERAGE_VALUE.\n\n")
+	data_loader.AddToSqlScript(query)
 	return nil
 }
