@@ -174,7 +174,7 @@ func LoadCoberturasData(db *sql.Tx, data []map[string]string) error {
 		)
 		log.Println(row)
 		if err != nil {
-			return fmt.Errorf("error insertando datos en temp_csv_coverage: %v", err)
+			return fmt.Errorf("error insertando datos en temp_csv_coberturas: %v", err)
 		}
 	}
 	fmt.Println("Datos de cobertura insertados correctamente.")

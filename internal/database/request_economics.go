@@ -17,12 +17,12 @@ func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
 	)
 	SELECT
 		e.ECONOMIC_ITEM_ID,
-		? AS REQUEST_ID, -- Usar el REQUEST_ID proporcionado
+		? AS REQUEST_ID,
 		CASE
-			WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(SUBSTRING(c.SUMAASG, 4) AS DECIMAL(15,4)) -- SUMA ASEGURADA sin ceros iniciales
-			WHEN e.ECONOMIC_ITEM_ID = 29000 THEN c.PMAANUAL                               -- PRIMA ANUAL
-			WHEN e.ECONOMIC_ITEM_ID = 8000 THEN c.IVAANUAL                               -- IVA
-			ELSE 0.0000                                                                 -- Otros valores en 0
+			WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(t.SUMAASG AS DECIMAL(15, 4)) -- SUMA ASEGURADA
+			WHEN e.ECONOMIC_ITEM_ID = 29000 THEN CAST(t.PMAANUAL AS DECIMAL(15, 4)) -- PRIMA ANUAL
+			WHEN e.ECONOMIC_ITEM_ID = 8000 THEN CAST(t.IVAANUAL AS DECIMAL(15, 4)) -- IVA
+			ELSE 0.0000 -- Otros valores en 0
 		END AS ECONOMIC_VALUE,
 		NOW() AS ECONOMIC_VALUE_DATE
 	FROM (
@@ -53,17 +53,20 @@ func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
 		SELECT 28000 UNION ALL
 		SELECT 29000
 	) e
-	JOIN REQUEST r ON r.REQUEST_ID = ? -- Relacionar REQUEST_ID
-	JOIN temp_csv_coberturas c ON c.NPOLIZA = r.CONTRACT_ID -- Relacionar con la cobertura usando CONTRACT_ID
+	JOIN temp_csv_coberturas t
+		ON t.NPOLIZA = (
+			SELECT NPOLIZA FROM REQUEST r WHERE r.REQUEST_ID = ?
+		)
 	WHERE NOT EXISTS (
 		SELECT 1
 		FROM REQUEST_ECONOMICS re
 		WHERE re.ECONOMIC_ITEM_ID = e.ECONOMIC_ITEM_ID
-		AND re.REQUEST_ID = r.REQUEST_ID
-	);
+		  AND re.REQUEST_ID = ?
+	)
+	GROUP BY e.ECONOMIC_ITEM_ID; -- Agrupa para evitar duplicados en la combinación
 	`
 
-	_, err := db.Exec(query, requestID, requestID)
+	_, err := db.Exec(query, requestID, requestID, requestID)
 	if err != nil {
 		return fmt.Errorf("error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", requestID, err)
 	}

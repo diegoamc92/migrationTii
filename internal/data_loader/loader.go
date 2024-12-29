@@ -54,7 +54,7 @@ func SplitAddress(address string) (string, string, string) {
 }
 
 // Carga y procesa datos desde CSV
-func CleanAndProcessData(csvPath string) ([]map[string]string, error) {
+func CleanAseguradosData(csvPath string) ([]map[string]string, error) {
 	file, err := os.Open(csvPath)
 	if err != nil {
 		return nil, fmt.Errorf("error al abrir el archivo CSV: %v", err)
@@ -91,6 +91,58 @@ func CleanAndProcessData(csvPath string) ([]map[string]string, error) {
 		entry["ADDRESS_STREET"] = street
 		entry["ADDRESS_NUMBER"] = number
 		entry["ADDRESS_APARTMENT"] = apartment
+
+		data = append(data, entry)
+	}
+	return data, nil
+}
+
+func CleanAndProcessCoverageData(csvPath string) ([]map[string]string, error) {
+	file, err := os.Open(csvPath)
+	if err != nil {
+		return nil, fmt.Errorf("error al abrir el archivo CSV: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	reader.Comma = ';' // Delimitador de columna
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("error al leer el CSV: %v", err)
+	}
+
+	if len(records) == 0 {
+		return nil, fmt.Errorf("el archivo CSV está vacío")
+	}
+
+	headers := records[0]
+	data := make([]map[string]string, 0)
+
+	for _, row := range records[1:] {
+		entry := make(map[string]string)
+		for i, value := range row {
+			entry[headers[i]] = strings.TrimSpace(value)
+		}
+
+		// Procesar SUMAASG: quitar ceros iniciales y convertir a formato numérico
+		if sumaAsg, ok := entry["SUMAASG"]; ok {
+			cleanedSumaAsg := strings.TrimLeft(sumaAsg, "0") // Quitar ceros iniciales
+			if cleanedSumaAsg == "" {
+				cleanedSumaAsg = "0" // Asegurar que no quede vacío
+			}
+			entry["SUMAASG"] = cleanedSumaAsg
+		}
+
+		// Procesar PMAANUAL: convertir a formato numérico
+		if pmaAnual, ok := entry["PMAANUAL"]; ok {
+			entry["PMAANUAL"] = strings.ReplaceAll(pmaAnual, ",", ".") // Reemplazar coma por punto decimal
+		}
+
+		// Procesar IVAANUAL: convertir a formato numérico
+		if ivaAnual, ok := entry["IVAANUAL"]; ok {
+			entry["IVAANUAL"] = strings.ReplaceAll(ivaAnual, ",", ".") // Reemplazar coma por punto decimal
+		}
 
 		data = append(data, entry)
 	}
