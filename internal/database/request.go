@@ -6,60 +6,57 @@ import (
 	"log"
 )
 
+//func TempContractId(db *sql.Tx) error {
+//	query := `
+//	CREATE TEMPORARY TABLE temp_contract_mapping AS
+//		SELECT
+//    	t.NPOLIZA AS NPOLIZA,
+//    c.CONTRACT_ID AS CONTRACT_ID
+//		FROM temp_csv_polizas t
+//			JOIN CONTRACT_HEADER c
+//    			ON t.NPOLIZA = c.CONTRACT_ID
+//			WHERE t.CODESTADO = '03';
+//`
+//	_, err := db.Exec(query)
+//	if err != nil {
+//		return fmt.Errorf("error creando temp_contract_mapping: %v", err)
+//	}
+//
+//	fmt.Println("Tabla temporal temp_contract_mapping creada correctamente.")
+//	log.Println(query)
+//	return nil
+//}
+
 // Insert Request inserta datos en la tabla REQUEST.
-func InsertRequest(db *sql.Tx) error {
+func InsertSingleRequest(db *sql.Tx, contractID int64) error {
 	query := `
 	INSERT INTO REQUEST (
-    CONTRACT_ID,
-    PENDING_INSPECTION,
-    INSURER_ID,
-    POLICY_ID,
-    SECTION_ID,
-    SUB_SECTION_ID,
-    ENDORSEMENT_ID,
-    CERTIFICATION_NUMBER,
-    USER_ID,
-    REQUEST_STATUS_ID,
-    OBSERVATIONS,
-    COMMENTS,
-    CREATED_DATE,
-    DUE_DATE,
-    ACCOUNT_ID,
-    AGENT_PARTY_ID
-)
-SELECT
-    c.CONTRACT_ID,                         -- Asociado al CONTRACT_HEADER
-    1 AS PENDING_INSPECTION,               -- Default a 1
-    NULL AS INSURER_ID,                    -- ID de la aseguradora fija (NULL)
-    NULL AS POLICY_ID,                     -- Número de póliza (NULL)
-    NULL AS SECTION_ID,                    -- Sección por defecto (NULL)
-    NULL AS SUB_SECTION_ID,                -- Sub-sección fija (NULL)
-    NULL AS ENDORSEMENT_ID,                -- Dejar en NULL (falta información)
-    '000-1111111111' AS CERTIFICATION_NUMBER, -- Número de certificación fijo
-    NULL AS USER_ID,                       -- Dejar en NULL
-    13000 AS REQUEST_STATUS_ID,            -- Estado de la solicitud
-    'OBSERVACION DESDE EL PORTAL' AS OBSERVATIONS,
-    'COMENTARIO DESDE PORTAL' AS COMMENTS,
-    NULL AS CREATED_DATE,                  -- Dejar en NULL
-    NULL AS DUE_DATE,                      -- Dejar en NULL
-    NULL AS ACCOUNT_ID,                    -- Dejar en NULL
-    23869 AS AGENT_PARTY_ID                -- ID del agente fijo
-FROM temp_csv_polizas t
-JOIN CONTRACT_HEADER c ON c.CONTRACT_ID = (
-    SELECT DISTINCT CONTRACT_ID
-    FROM CONTRACT_HEADER ch
-    WHERE ch.CONTRACT_ID = t.NPOLORI -- Vincular con la columna correspondiente
-    LIMIT 1
-)
-WHERE t.CODESTADO = '03';
+		CONTRACT_ID,
+		PENDING_INSPECTION,
+		INSURER_ID,
+		POLICY_ID,
+		SECTION_ID,
+		SUB_SECTION_ID,
+		ENDORSEMENT_ID,
+		CERTIFICATION_NUMBER,
+		USER_ID,
+		REQUEST_STATUS_ID,
+		OBSERVATIONS,
+		COMMENTS,
+		CREATED_DATE,
+		DUE_DATE,
+		ACCOUNT_ID,
+		AGENT_PARTY_ID
+	)
+	VALUES (?, 1, NULL, NULL, NULL, NULL, NULL, '000-1111111111', NULL, 13000, 
+	'MIGRACION TII', 'MIGRACION TII', NULL, NULL, NULL, 23869);
 	`
 
-	_, err := db.Exec(query)
+	_, err := db.Exec(query, contractID)
 	if err != nil {
-		return fmt.Errorf("error insertando en REQUEST: %v", err)
+		return fmt.Errorf("error insertando en REQUEST para CONTRACT_ID %d: %v", contractID, err)
 	}
 
-	fmt.Println("Datos insertados correctamente en REQUEST.")
-	log.Println(query)
+	log.Printf("REQUEST creado para CONTRACT_ID: %d", contractID)
 	return nil
 }

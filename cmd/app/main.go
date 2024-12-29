@@ -78,20 +78,26 @@ func main() {
 		log.Println("Archivo encontrado: MIGSA_POLIZAS-18-12_CSV.csv")
 	}
 
+	if !fileExists("pkg/utils/data/MIGSA_COBERTURAS_CSV.csv") {
+		log.Fatalf("Archivo no encontrado: MIGSA_COBERTURAS_CSV.csv")
+	} else {
+		log.Println("Archivo encontrado: MIGSA_COBERTURAS_CSV.csv")
+	}
+
 	if err := database.CreateTempTable(tx); err != nil {
 		return
 	}
-	r.Add(fmt.Sprintf("Tabla temporal creada en %v.", time.Since(blockStart)))
-
+	//r.Add(fmt.Sprintf("Tabla temporal creada en %v.", time.Since(blockStart)))
+	//
 	blockStart = time.Now()
 	if err := database.CreateCleanedTempTable(tx); err != nil {
 		return
 	}
-	r.Add(fmt.Sprintf("Tabla temporal limpia creada en %v.", time.Since(blockStart)))
-
-	// 5. Procesar y cargar datos base
-	log.Println("Cargando y procesando datos base...")
-	blockStart = time.Now()
+	//r.Add(fmt.Sprintf("Tabla temporal limpia creada en %v.", time.Since(blockStart)))
+	//
+	//// 5. Procesar y cargar datos base
+	//log.Println("Cargando y procesando datos base...")
+	//blockStart = time.Now()
 
 	aseguradosData, err := data_loader.CleanAndProcessData("pkg/utils/data/MIGSA_ASEGURADOS_CSV.csv")
 	if err != nil {
@@ -113,6 +119,17 @@ func main() {
 		return
 	}
 	r.Add(fmt.Sprintf("Datos de pólizas cargados en %v.", time.Since(blockStart)))
+
+	coberturasData, err := data_loader.CleanAndProcessData("pkg/utils/data/MIGSA_COBERTURAS_CSV.csv")
+	if err != nil {
+		log.Fatalf("Error procesando CSV de coberturas: %v", err)
+	}
+
+	if err := database.LoadCoberturasData(tx, coberturasData); err != nil {
+		log.Fatalf("Error insertando datos de asegurados en temp_csv_coberturas: %v", err)
+	}
+
+	r.Add(fmt.Sprintf("Datos de coberturas cargados en %v.", time.Since(blockStart)))
 
 	// 6. Procesar datos de asegurados
 	log.Println("Procesando datos de asegurados...")
@@ -177,81 +194,129 @@ func main() {
 	}
 	log.Println("Datos insertados en PAYMENT_TERM correctamente.")
 
-	r.Add(fmt.Sprintf("Datos de asegurados procesados en %v.", time.Since(blockStart)))
-
-	// 7. Procesar datos de pólizas y contratos
-	log.Println("Procesando datos de pólizas y contratos...")
-	blockStart = time.Now()
 	if err := database.CreateTempIssuanceDates(tx); err != nil {
 		log.Fatalf("Error creando tabla temporal: %v", err)
 	}
-	if err := database.InsertContractHeader(tx); err != nil {
+	// Insertar datos en CONTRACT_HEADER
+	contractIDs, err := database.InsertContractHeader(tx)
+	if err != nil {
 		log.Fatalf("Error insertando en CONTRACT_HEADER: %v", err)
 	}
-	r.Add(fmt.Sprintf("Datos de pólizas y contratos procesados en %v.", time.Since(blockStart)))
 
-	// 8. Procesar datos relacionados con REQUEST
-	log.Println("Procesando datos de REQUEST...")
-	blockStart = time.Now()
-
-	log.Println("Insertando en REQUEST...")
-	if err := database.InsertRequest(tx); err != nil {
-		log.Fatalf("Error insertando REQUEST: %v", err)
-	}
-	log.Println("Datos insertados en REQUEST correctamente.")
-
-	log.Println("Insertando en REQUEST_COVERAGE_VALUE...")
-	if err := database.InsertRequestCoverageValue(tx); err != nil {
-		log.Fatalf("Error insertando REQUEST_COVERAGE_VALUE: %v", err)
-	}
-	log.Println("Datos insertados en REQUEST_COVERAGE_VALUE correctamente.")
-
-	log.Println("Insertando en REQUEST_ECONOMICS...")
-	if err := database.InsertRequestEconomics(tx); err != nil {
-		log.Fatalf("Error insertando REQUEST_ECONOMICS: %v", err)
-	}
-	log.Println("Datos insertados en REQUEST_ECONOMICS correctamente.")
-
-	log.Println("Insertando en REQUEST_PARAMETER...")
-	if err := database.InsertRequestParameter(tx); err != nil {
-		log.Fatalf("Error insertando REQUEST_PARAMETER: %v", err)
-	}
-	log.Println("Datos insertados en REQUEST_PARAMETER correctamente.")
-
-	r.Add(fmt.Sprintf("Datos de REQUEST procesados en %v.", time.Since(blockStart)))
-
-	// 9. Procesar datos de pólizas finales
-	log.Println("Procesando datos de POLICY...")
-	blockStart = time.Now()
-	if err := database.CreateTempOriginalPolicyTable(tx); err != nil {
-		log.Fatalf("Error creando tabla temporal: %v", err)
+	// Iterar sobre los IDs en orden descendente e insertar en REQUEST
+	for i := len(contractIDs) - 1; i >= 0; i-- {
+		contractID := contractIDs[i]
+		if err := database.InsertSingleRequest(tx, contractID); err != nil {
+			log.Printf("Error insertando en REQUEST para CONTRACT_ID %d: %v", contractID, err)
+			// Si un error ocurre, puedes decidir si quieres continuar con los demás IDs
+			continue
+		}
 	}
 
-	log.Printf("Insertando en POLICY...")
-	if err := database.InsertIntoPolicy(tx); err != nil {
-		log.Fatalf("Error insertando en POLICY: %v", err)
+	// Recuperar los REQUEST_IDs generados
+	requestIDs, err := database.GetRequestIDs(tx, contractIDs)
+	if err != nil {
+		log.Fatalf("Error recuperando REQUEST_IDs: %v", err)
 	}
-	log.Printf("Datos insertados en POLICY correctamente.")
 
-	log.Printf("Insertando en POLICY_COVERAGE_VALUE...")
-	if err := database.InsertPolicyCoverageValue(tx); err != nil {
-		log.Fatalf("Error insertando en POLICY_COVERAGE_VALUE: %v", err)
+	// Iterar sobre los REQUEST_IDs e insertar en REQUEST_COVERAGE_VALUE
+	for _, requestID := range requestIDs {
+		// Insertar en REQUEST_COVERAGE_VALUE
+		if err := database.InsertRequestCoverageValue(tx, requestID); err != nil {
+			log.Printf("Error insertando en REQUEST_COVERAGE_VALUE para REQUEST_ID %d: %v", requestID, err)
+		}
+
+		// Insertar en REQUEST_ECONOMICS
+		if err := database.InsertRequestEconomics(tx, requestID); err != nil {
+			log.Printf("Error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", requestID, err)
+		}
+
+		// Insertar en REQUEST_PARAMETER
+		if err := database.InsertRequestParameter(tx, requestID); err != nil {
+			log.Printf("Error insertando en REQUEST_PARAMETER para REQUEST_ID %d: %v", requestID, err)
+		}
 	}
-	log.Printf("Datos insertados en POLICY_COVERAGE_VALUE correctamente.")
 
-	log.Printf("Insertando en POLICY_PARAMETER...")
-	if err := database.InsertPolicyParameter(tx); err != nil {
-		log.Fatalf("Error insertando en POLICY_PARAMETER: %v", err)
-	}
-	log.Printf("Datos insertados en POLICY_PARAMETER correctamente.")
+	log.Println("Proceso completado correctamente.")
 
-	log.Printf("Insertando en POLICY_ECONOMICS...")
-	if err := database.InsertPolicyEconomics(tx); err != nil {
-		log.Fatalf("Error insertando en POLICY_ECONOMICS: %v", err)
-	}
-	log.Printf("Datos insertados en POLICY_ECONOMICS correctamente.")
+	//r.Add(fmt.Sprintf("Datos de asegurados procesados en %v.", time.Since(blockStart)))
 
-	r.Add(fmt.Sprintf("Datos de POLICY procesados en %v.", time.Since(blockStart)))
+	// 7. Procesar datos de pólizas y contratos
+	//log.Println("Procesando datos de pólizas y contratos...")
+	//blockStart = time.Now()
+	//if err := database.CreateTempIssuanceDates(tx); err != nil {
+	//	log.Fatalf("Error creando tabla temporal: %v", err)
+	//}
+	//ids, err := database.InsertContractHeader(tx)
+	//if err != nil {
+	//	log.Fatalf("Error insertando en CONTRACT_HEADER: %v", err)
+	//}
+	//log.Printf("IDs generados en CONTRACT_HEADER: %v", ids)
+
+	//r.Add(fmt.Sprintf("Datos de pólizas y contratos procesados en %v.", time.Since(blockStart)))
+	//
+	//// 8. Procesar datos relacionados con REQUEST
+	//log.Println("Procesando datos de REQUEST...")
+	//blockStart = time.Now()
+
+	//log.Println("Insertando en REQUEST...")
+	//if err := database.InsertRequest(tx); err != nil {
+	//	log.Fatalf("Error insertando REQUEST: %v", err)
+	//}
+	//log.Println("Datos insertados en REQUEST correctamente.")
+
+	//log.Println("Insertando en REQUEST_COVERAGE_VALUE...")
+	//if err := database.InsertRequestCoverageValue(tx); err != nil {
+	//	log.Fatalf("Error insertando REQUEST_COVERAGE_VALUE: %v", err)
+	//}
+	//log.Println("Datos insertados en REQUEST_COVERAGE_VALUE correctamente.")
+	//
+	//log.Println("Insertando en REQUEST_ECONOMICS...")
+	//if err := database.InsertRequestEconomics(tx); err != nil {
+	//	log.Fatalf("Error insertando REQUEST_ECONOMICS: %v", err)
+	//}
+	//log.Println("Datos insertados en REQUEST_ECONOMICS correctamente.")
+	//
+	//log.Println("Insertando en REQUEST_PARAMETER...")
+	//if err := database.InsertRequestParameter(tx); err != nil {
+	//	log.Fatalf("Error insertando REQUEST_PARAMETER: %v", err)
+	//}
+	//log.Println("Datos insertados en REQUEST_PARAMETER correctamente.")
+	//
+	////r.Add(fmt.Sprintf("Datos de REQUEST procesados en %v.", time.Since(blockStart)))
+	//
+	//// 9. Procesar datos de pólizas finales
+	////log.Println("Procesando datos de POLICY...")
+	////blockStart = time.Now()
+	//if err := database.CreateTempOriginalPolicyTable(tx); err != nil {
+	//	log.Fatalf("Error creando tabla temporal: %v", err)
+	//}
+	//
+	//log.Printf("Insertando en POLICY...")
+	//if err := database.InsertIntoPolicy(tx); err != nil {
+	//	log.Fatalf("Error insertando en POLICY: %v", err)
+	//}
+	//log.Printf("Datos insertados en POLICY correctamente.")
+	//
+	//log.Printf("Insertando en POLICY_COVERAGE_VALUE...")
+	//if err := database.InsertPolicyCoverageValue(tx); err != nil {
+	//	log.Fatalf("Error insertando en POLICY_COVERAGE_VALUE: %v", err)
+	//}
+	//log.Printf("Datos insertados en POLICY_COVERAGE_VALUE correctamente.")
+	//
+	//log.Printf("Insertando en POLICY_PARAMETER...")
+	//if err := database.InsertPolicyParameter(tx); err != nil {
+	//	log.Fatalf("Error insertando en POLICY_PARAMETER: %v", err)
+	//}
+	//log.Printf("Datos insertados en POLICY_PARAMETER correctamente.")
+	//
+	//log.Printf("Insertando en POLICY_ECONOMICS...")
+	//if err := database.InsertPolicyEconomics(tx); err != nil {
+	//	log.Fatalf("Error insertando en POLICY_ECONOMICS: %v", err)
+	//}
+	//log.Printf("Datos insertados en POLICY_ECONOMICS correctamente.")
+
+	//r.Add(fmt.Sprintf("Datos de POLICY procesados en %v.", time.Since(blockStart)))
 
 	// 10. Insertar en BILLING_STATEMENT
 	//log.Println("Procesando datos de BILLING_STATEMENT...")

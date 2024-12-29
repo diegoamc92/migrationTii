@@ -4,58 +4,67 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 )
 
-// RequestCoverageValue inserta valores en la tabla REQUEST_COVERAGE_VALUE.
-func InsertRequestCoverageValue(db *sql.Tx) error {
+func GetRequestIDs(db *sql.Tx, contractIDs []int64) ([]int64, error) {
 	query := `
-	INSERT INTO REQUEST_COVERAGE_VALUE (
-    REQUEST_ID,
-    IC_INSURER_PARTY_ID,
-    IC_SECTION_ID,
-    IC_SUB_SECTION_ID,
-    IC_COVERAGE_ID,
-    INSURED_AMOUNT,
-    DEDUCTIBLE,
-    INITIAL_COVERAGE_GRACE_PERIOD,
-    FUT_PAYR_COVERAGE_GRACE_PERI,
-    INIT_COVER_GROUP_GRACE_PERIOD,
-    FUT_PAYR_COVER_GR_GRACE_PERIOD,
-    MAXIMUM_PERIOD_OF_COVERAGE,
-    REINSURED_AMOUNT,
-    PREMIUM,
-    BASE_PREMIUM,
-    TAX_VALUE
-)
-SELECT
-    r.REQUEST_ID,               -- ID de la solicitud generada
-    1020 AS IC_INSURER_PARTY_ID, -- ID de la aseguradora (fijo)
-    101 AS IC_SECTION_ID,        -- ID de la sección (fijo)
-    3000 AS IC_SUB_SECTION_ID,   -- ID de la subsección (fijo)
-    1 AS IC_COVERAGE_ID,         -- ID de cobertura (fijo)
-    25000 AS INSURED_AMOUNT,     -- Monto asegurado (fijo)
-    NULL AS DEDUCTIBLE,          -- Deducible (NULL)
-    NULL AS INITIAL_COVERAGE_GRACE_PERIOD,
-    NULL AS FUT_PAYR_COVERAGE_GRACE_PERI,
-    NULL AS INIT_COVER_GROUP_GRACE_PERIOD,
-    NULL AS FUT_PAYR_COVER_GR_GRACE_PERIOD,
-    NULL AS MAXIMUM_PERIOD_OF_COVERAGE,
-    NULL AS REINSURED_AMOUNT,
-    0.46409736 AS PREMIUM,       -- Prima total
-    0.38999736 AS BASE_PREMIUM,  -- Prima base
-    0.0741 AS TAX_VALUE          -- Valor de impuesto
-FROM REQUEST r
-JOIN CONTRACT_HEADER c ON r.CONTRACT_ID = c.CONTRACT_ID
-JOIN temp_csv_polizas t ON t.NPOLIZA = c.CONTRACT_ID
-WHERE t.CODESTADO = '03'; -- Solo pólizas vigentes
+	SELECT REQUEST_ID
+	FROM REQUEST
+	WHERE CONTRACT_ID IN (?` + strings.Repeat(",?", len(contractIDs)-1) + `)
 	`
-
-	_, err := db.Exec(query)
-	if err != nil {
-		return fmt.Errorf("error inserting into REQUEST_COVERAGE_VALUE: %v", err)
+	args := make([]interface{}, len(contractIDs))
+	for i, id := range contractIDs {
+		args[i] = id
 	}
 
-	fmt.Println("Datos insertados en REQUEST_COVERAGE_VALUE correctamente.")
-	log.Println(query)
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error recuperando REQUEST_IDs: %v", err)
+	}
+	defer rows.Close()
+
+	var requestIDs []int64
+	for rows.Next() {
+		var requestID int64
+		if err := rows.Scan(&requestID); err != nil {
+			return nil, fmt.Errorf("error leyendo REQUEST_ID: %v", err)
+		}
+		requestIDs = append(requestIDs, requestID)
+	}
+
+	return requestIDs, nil
+}
+
+// RequestCoverageValue inserta valores en la tabla REQUEST_COVERAGE_VALUE.
+func InsertRequestCoverageValue(db *sql.Tx, requestID int64) error {
+	query := `
+	INSERT INTO REQUEST_COVERAGE_VALUE (
+		REQUEST_ID,
+		IC_INSURER_PARTY_ID,
+		IC_SECTION_ID,
+		IC_SUB_SECTION_ID,
+		IC_COVERAGE_ID,
+		INSURED_AMOUNT,
+		DEDUCTIBLE,
+		INITIAL_COVERAGE_GRACE_PERIOD,
+		FUT_PAYR_COVERAGE_GRACE_PERI,
+		INIT_COVER_GROUP_GRACE_PERIOD,
+		FUT_PAYR_COVER_GR_GRACE_PERIOD,
+		MAXIMUM_PERIOD_OF_COVERAGE,
+		REINSURED_AMOUNT,
+		PREMIUM,
+		BASE_PREMIUM,
+		TAX_VALUE
+	)
+	VALUES (?, 1020, 101, 3000, 1, 25000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.46409736, 0.38999736, 0.0741);
+	`
+
+	_, err := db.Exec(query, requestID)
+	if err != nil {
+		return fmt.Errorf("error insertando en REQUEST_COVERAGE_VALUE para REQUEST_ID %d: %v", requestID, err)
+	}
+
+	log.Printf("Datos insertados en REQUEST_COVERAGE_VALUE para REQUEST_ID: %d", requestID)
 	return nil
 }

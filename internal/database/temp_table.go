@@ -32,6 +32,23 @@ func CreateTempTable(db *sql.Tx) error {
 			IDCONDCOBRO VARCHAR(50), DESCCONDCOBRO VARCHAR(100), TPCONDCOBRO VARCHAR(10),
 			DESCTPCONDCOBRO VARCHAR(50),NROCONDCOBRO INT, IDPERIODPAGO VARCHAR(10), DESCPERPAGO VARCHAR(50)
 		);`,
+
+		`CREATE TEMPORARY TABLE temp_csv_coberturas (
+		RAMO INT,
+		NPOLIZA VARCHAR(20),
+		DEPEND VARCHAR(10),
+		CLAVCOB VARCHAR(10),
+		TIPOADIC VARCHAR(10),
+		CLAVADIC VARCHAR(10),
+		FINICOB DATE,
+		FTERMCOV DATE,
+		EDAD INT,
+		SUMAASG DECIMAL(15,2),
+		PMAANUAL DECIMAL(15,4),
+		EXTRAPRIMA DECIMAL(15,4),
+		IVAANUAL DECIMAL(15,4)
+	);
+		`,
 	}
 
 	fmt.Println("Creando tablas temporales...")
@@ -134,6 +151,33 @@ func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
 	}
 	fmt.Println("Datos de pólizas insertados correctamente.")
 	log.Println(query)
+	return nil
+}
+
+func LoadCoberturasData(db *sql.Tx, data []map[string]string) error {
+	query := `INSERT INTO temp_csv_coberturas (
+		RAMO, NPOLIZA, DEPEND, CLAVCOB, TIPOADIC, CLAVADIC, FINICOB, FTERMCOV,
+		EDAD, SUMAASG, PMAANUAL, EXTRAPRIMA, IVAANUAL
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return fmt.Errorf("error preparando la consulta: %v", err)
+	}
+	defer stmt.Close()
+
+	for _, row := range data {
+		_, err := stmt.Exec(
+			row["RAMO"], row["NPOLIZA"], row["DEPEND"], row["CLAVCOB"],
+			row["TIPOADIC"], row["CLAVADIC"], row["FINICOB"], row["FTERMCOV"],
+			row["EDAD"], row["SUMAASG"], row["PMAANUAL"], row["EXTRAPRIMA"], row["IVAANUAL"],
+		)
+		log.Println(row)
+		if err != nil {
+			return fmt.Errorf("error insertando datos en temp_csv_coverage: %v", err)
+		}
+	}
+	fmt.Println("Datos de cobertura insertados correctamente.")
 	return nil
 }
 

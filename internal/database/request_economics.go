@@ -7,68 +7,67 @@ import (
 )
 
 // RequestEconomics inserta datos en la tabla REQUEST_ECONOMICS.
-func InsertRequestEconomics(db *sql.Tx) error {
+func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
 	query := `
 	INSERT INTO REQUEST_ECONOMICS (
-    ECONOMIC_ITEM_ID,
-    REQUEST_ID,
-    ECONOMIC_VALUE,
-    ECONOMIC_VALUE_DATE
-)
-SELECT
-    e.ECONOMIC_ITEM_ID,
-    r.REQUEST_ID,
-    CASE
-        WHEN e.ECONOMIC_ITEM_ID = 9000 THEN 25000.0000 -- Valor asegurado específico
-        WHEN e.ECONOMIC_ITEM_ID = 2000 THEN 0.4641     -- Prima ejemplo
-        WHEN e.ECONOMIC_ITEM_ID = 8000 THEN 0.0741     -- Impuesto ejemplo
-        ELSE 0.0000                                    -- Valor por defecto
-    END AS ECONOMIC_VALUE,
-    NOW() AS ECONOMIC_VALUE_DATE
-FROM (
-         SELECT 1000 AS ECONOMIC_ITEM_ID UNION ALL
-         SELECT 2000 UNION ALL
-         SELECT 3000 UNION ALL
-         SELECT 4000 UNION ALL
-         SELECT 5000 UNION ALL
-         SELECT 6000 UNION ALL
-         SELECT 7000 UNION ALL
-         SELECT 8000 UNION ALL
-         SELECT 9000 UNION ALL
-         SELECT 10000 UNION ALL
-         SELECT 11000 UNION ALL
-         SELECT 12000 UNION ALL
-         SELECT 13000 UNION ALL
-         SELECT 14000 UNION ALL
-         SELECT 15000 UNION ALL
-         SELECT 16000 UNION ALL
-         SELECT 17000 UNION ALL
-         SELECT 18000 UNION ALL
-         SELECT 19000 UNION ALL
-         SELECT 20000 UNION ALL
-         SELECT 21000 UNION ALL
-         SELECT 24000 UNION ALL
-         SELECT 25000 UNION ALL
-         SELECT 26000 UNION ALL
-         SELECT 28000 UNION ALL
-         SELECT 29000
-     ) e
-         CROSS JOIN REQUEST r
-WHERE r.REQUEST_ID = (SELECT MAX(REQUEST_ID) FROM REQUEST) -- Usar el REQUEST_ID generado
-  AND NOT EXISTS (
-        SELECT 1
-        FROM REQUEST_ECONOMICS re
-        WHERE re.ECONOMIC_ITEM_ID = e.ECONOMIC_ITEM_ID
-          AND re.REQUEST_ID = r.REQUEST_ID
-    );
+		ECONOMIC_ITEM_ID,
+		REQUEST_ID,
+		ECONOMIC_VALUE,
+		ECONOMIC_VALUE_DATE
+	)
+	SELECT
+		e.ECONOMIC_ITEM_ID,
+		? AS REQUEST_ID, -- Usar el REQUEST_ID proporcionado
+		CASE
+			WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(SUBSTRING(c.SUMAASG, 4) AS DECIMAL(15,4)) -- SUMA ASEGURADA sin ceros iniciales
+			WHEN e.ECONOMIC_ITEM_ID = 29000 THEN c.PMAANUAL                               -- PRIMA ANUAL
+			WHEN e.ECONOMIC_ITEM_ID = 8000 THEN c.IVAANUAL                               -- IVA
+			ELSE 0.0000                                                                 -- Otros valores en 0
+		END AS ECONOMIC_VALUE,
+		NOW() AS ECONOMIC_VALUE_DATE
+	FROM (
+		SELECT 1000 AS ECONOMIC_ITEM_ID UNION ALL
+		SELECT 2000 UNION ALL
+		SELECT 3000 UNION ALL
+		SELECT 4000 UNION ALL
+		SELECT 5000 UNION ALL
+		SELECT 6000 UNION ALL
+		SELECT 7000 UNION ALL
+		SELECT 8000 UNION ALL
+		SELECT 9000 UNION ALL
+		SELECT 10000 UNION ALL
+		SELECT 11000 UNION ALL
+		SELECT 12000 UNION ALL
+		SELECT 13000 UNION ALL
+		SELECT 14000 UNION ALL
+		SELECT 15000 UNION ALL
+		SELECT 16000 UNION ALL
+		SELECT 17000 UNION ALL
+		SELECT 18000 UNION ALL
+		SELECT 19000 UNION ALL
+		SELECT 20000 UNION ALL
+		SELECT 21000 UNION ALL
+		SELECT 24000 UNION ALL
+		SELECT 25000 UNION ALL
+		SELECT 26000 UNION ALL
+		SELECT 28000 UNION ALL
+		SELECT 29000
+	) e
+	JOIN REQUEST r ON r.REQUEST_ID = ? -- Relacionar REQUEST_ID
+	JOIN temp_csv_coberturas c ON c.NPOLIZA = r.CONTRACT_ID -- Relacionar con la cobertura usando CONTRACT_ID
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM REQUEST_ECONOMICS re
+		WHERE re.ECONOMIC_ITEM_ID = e.ECONOMIC_ITEM_ID
+		AND re.REQUEST_ID = r.REQUEST_ID
+	);
 	`
 
-	_, err := db.Exec(query)
+	_, err := db.Exec(query, requestID, requestID)
 	if err != nil {
-		return fmt.Errorf("error al insertar en REQUEST_ECONOMICS: %v", err)
+		return fmt.Errorf("error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", requestID, err)
 	}
 
-	fmt.Println("Datos insertados en REQUEST_ECONOMICS correctamente.")
-	log.Println(query)
+	log.Printf("Datos insertados en REQUEST_ECONOMICS para REQUEST_ID: %d", requestID)
 	return nil
 }
