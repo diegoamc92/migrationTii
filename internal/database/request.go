@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 )
 
 //func TempContractId(db *sql.Tx) error {
@@ -28,35 +27,43 @@ import (
 //}
 
 // Insert Request inserta datos en la tabla REQUEST.
-func InsertSingleRequest(db *sql.Tx, contractID int64) error {
+func InsertSingleRequestForContract(db *sql.Tx, contractID int64) (int64, error) {
 	query := `
-	INSERT INTO REQUEST (
-		CONTRACT_ID,
-		PENDING_INSPECTION,
-		INSURER_ID,
-		POLICY_ID,
-		SECTION_ID,
-		SUB_SECTION_ID,
-		ENDORSEMENT_ID,
-		CERTIFICATION_NUMBER,
-		USER_ID,
-		REQUEST_STATUS_ID,
-		OBSERVATIONS,
-		COMMENTS,
-		CREATED_DATE,
-		DUE_DATE,
-		ACCOUNT_ID,
-		AGENT_PARTY_ID
-	)
-	VALUES (?, 1, NULL, NULL, NULL, NULL, NULL, '000-1111111111', NULL, 13000, 
-	'MIGRACION TII', 'MIGRACION TII', NULL, NULL, NULL, 23869);
-	`
+    INSERT INTO REQUEST (
+        CONTRACT_ID,
+        PENDING_INSPECTION,
+        INSURER_ID,
+        POLICY_ID,
+        SECTION_ID,
+        SUB_SECTION_ID,
+        ENDORSEMENT_ID,
+        CERTIFICATION_NUMBER,
+        USER_ID,
+        REQUEST_STATUS_ID,
+        OBSERVATIONS,
+        COMMENTS,
+        CREATED_DATE,
+        DUE_DATE,
+        ACCOUNT_ID,
+        AGENT_PARTY_ID
+    )
+    VALUES (
+        ?, 1, NULL, NULL, NULL, NULL, NULL, 
+        '000-1111111111', NULL, 13000, 
+        'MIGRACION TII', 'MIGRACION TII', 
+        NOW(), NULL, NULL, 23869
+    );
+    `
 
-	_, err := db.Exec(query, contractID)
+	res, err := db.Exec(query, contractID)
 	if err != nil {
-		return fmt.Errorf("error insertando en REQUEST para CONTRACT_ID %d: %v", contractID, err)
+		return 0, fmt.Errorf("error insertando REQUEST para CONTRACT_ID %d: %v", contractID, err)
 	}
 
-	log.Printf("REQUEST creado para CONTRACT_ID: %d", contractID)
-	return nil
+	requestID, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("error obteniendo REQUEST_ID: %v", err)
+	}
+
+	return requestID, nil
 }

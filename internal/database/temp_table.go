@@ -199,3 +199,32 @@ func CreateTempOriginalPolicyTable(db *sql.Tx) error {
 	fmt.Println("Tabla temporal temp_original_policy creada correctamente.")
 	return nil
 }
+func GetPolizasFromTempTable(db *sql.Tx) ([]map[string]string, error) {
+	query := `
+    SELECT DISTINCT RAMO, NPOLIZA, NPOLORI
+    FROM temp_csv_polizas
+    WHERE CODESTADO = '03';
+    `
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("error recuperando pólizas: %v", err)
+	}
+	defer rows.Close()
+
+	var polizas []map[string]string
+	for rows.Next() {
+		var ramo, nPoliza, nPolOri string
+		if err := rows.Scan(&ramo, &nPoliza, &nPolOri); err != nil {
+			return nil, fmt.Errorf("error leyendo datos de pólizas: %v", err)
+		}
+
+		polizas = append(polizas, map[string]string{
+			"RAMO":    ramo,
+			"NPOLIZA": nPoliza,
+			"NPOLORI": nPolOri,
+		})
+	}
+
+	return polizas, nil
+}
