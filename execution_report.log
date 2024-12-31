@@ -1,10 +1,10 @@
-[2024-12-29 19:13:10] Configuración cargada correctamente.
-[2024-12-29 19:13:11] Conexión a la base de datos establecida.
-[2024-12-29 19:13:11] Transacción iniciada.
-[2024-12-29 19:13:22] Datos de asegurados cargados en 11.0152326s.
-[2024-12-29 19:13:33] Datos de pólizas cargados en 10.8719314s.
-[2024-12-29 19:13:44] Datos de coberturas cargados en 21.7589871s.
-[2024-12-29 19:14:07] Proceso completado exitosamente.
-[2024-12-29 19:14:07] Transacción completada exitosamente en 56.6598188s.
-Tiempo total de ejecución: 57.3245906s
+[2024-12-30 21:31:47] Configuración cargada correctamente.
+[2024-12-30 21:31:48] Conexión a la base de datos establecida.
+[2024-12-30 21:31:48] Transacción iniciada.
+[2024-12-30 21:32:00] Datos de asegurados cargados en 11.1015082s.
+[2024-12-30 21:32:11] Datos de pólizas cargados en 10.980179s.
+[2024-12-30 21:32:22] Datos de coberturas cargados en 21.8899942s.
+[2024-12-30 21:32:50] Proceso completado exitosamente.
+[2024-12-30 21:32:50] Transacción completada exitosamente en 1m2.154037s.
+Tiempo total de ejecución: 1m2.8685786s
 Estado final: ÉXITO

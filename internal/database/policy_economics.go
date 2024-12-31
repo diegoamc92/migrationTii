@@ -7,7 +7,7 @@ import (
 )
 
 // Insert PolicyEconomics inserta datos en la tabla POLICY_ECONOMICS.
-func InsertPolicyEconomics(db *sql.Tx) error {
+func InsertPolicyEconomics(db *sql.Tx, ramo string, nPolOri string) error {
 	query := `
     INSERT INTO POLICY_ECONOMICS (
     ECONOMIC_ITEM_ID,
@@ -21,13 +21,14 @@ func InsertPolicyEconomics(db *sql.Tx) error {
     TAX_ID
 )
 SELECT
-    ei.ECONOMIC_ITEM_ID,
+    e.ECONOMIC_ITEM_ID,
     CASE
-        WHEN ei.ECONOMIC_ITEM_ID = 9000 THEN 25000 -- Ajustar el valor para el ID 9000
-        ELSE ei.ECONOMIC_VALUE
+        WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(c.SUMAASG AS DECIMAL(15, 4)) -- SUMA ASEGURADA
+        WHEN e.ECONOMIC_ITEM_ID = 29000 THEN CAST(c.PMAANUAL AS DECIMAL(15, 4)) -- PRIMA ANUAL
+        WHEN e.ECONOMIC_ITEM_ID = 8000 THEN CAST(c.IVAANUAL AS DECIMAL(15, 4)) -- IVA
         END AS ECONOMIC_VALUE,
     1020 AS INSURER_PARTY_ID,      -- ID fijo del asegurador
-    CONCAT(t.RAMO, '-', t.NPOLORI) AS POLICY_ID, -- Generar POLICY_ID como RAMO-NPOLIZA original
+    CONCAT(?, '-', CAST(? AS UNSIGNED)) AS POLICY_ID, -- Generar POLICY_ID como RAMO-NPOLIZA original
     101 AS SECTION_ID,             -- Sección fija
     3000 AS SUB_SECTION_ID,        -- Sub-sección fija
     0 AS ENDORSEMENT_ID,           -- Endoso inicial
@@ -43,7 +44,7 @@ FROM (
          UNION ALL SELECT 6000, 0.4641
          UNION ALL SELECT 7000, 0
          UNION ALL SELECT 8000, 0.0741
-         UNION ALL SELECT 9000, 30000 -- Este será ajustado
+         UNION ALL SELECT 9000, 30000       -- Este será ajustado
          UNION ALL SELECT 10000, 0
          UNION ALL SELECT 11000, 0
          UNION ALL SELECT 12000, 0
@@ -61,17 +62,20 @@ FROM (
          UNION ALL SELECT 26000, 0
          UNION ALL SELECT 28000, 0
          UNION ALL SELECT 29000, 5.1056
-     ) AS ei
-         JOIN temp_csv_polizas t ON CONCAT(t.RAMO, '-', t.NPOLORI) = CONCAT(t.RAMO, '-', t.NPOLIZA)
-WHERE t.CODESTADO = '03';
+     ) e
+         JOIN temp_csv_coberturas c
+		ON c.RAMO = ? AND c.NPOLIZA = ?             -- Relación con la cobertura
+	ON DUPLICATE KEY UPDATE
+        ECONOMIC_VALUE = VALUES(ECONOMIC_VALUE),
+        ECONOMIC_VALUE_DATE = VALUES(ECONOMIC_VALUE_DATE);
     `
 
-	_, err := db.Exec(query)
+	_, err := db.Exec(query, ramo, nPolOri, ramo, nPolOri)
 	if err != nil {
-		return fmt.Errorf("error insertando en POLICY_ECONOMICS: %v", err)
+		return fmt.Errorf("error insertando en POLICY_ECONOMICS para POLICY_ID %s-%s: %v", ramo, nPolOri, err)
 	}
 
-	fmt.Println("Datos insertados correctamente en POLICY_ECONOMICS.")
+	log.Printf("Datos insertados correctamente en POLICY_ECONOMICS para POLICY_ID: %s-%s", ramo, nPolOri)
 	log.Println(query)
 	return nil
 }
