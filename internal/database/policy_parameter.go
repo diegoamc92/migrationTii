@@ -27,11 +27,17 @@ func InsertPolicyParameter(db *sql.Tx, ramo string, nPolOri string) error {
         0 AS ENDORSEMENT_ID,                                    -- Endoso inicial
         k.PARAMETER_KEY,                                        -- Clave de parámetro
         k.PARAMETER_DESC,                                       -- Descripción del parámetro
-        k.PARAMETER_VALUE                                       -- Valor del parámetro
+        CASE
+            WHEN k.PARAMETER_KEY = 'COVERAGE_KEY' THEN CAST(SUBSTRING(c.CLAVCOB, 2) AS UNSIGNED)  -- Cortar primer cero de CLAVCOB
+            WHEN k.PARAMETER_KEY = 'CONTRACT_TI' THEN t.REQUEST                                   -- Valor del campo REQUEST del CSV para CONTRACT_TI
+            ELSE k.PARAMETER_VALUE                                                                -- Valores originales para las demás claves
+        END AS POLICY_PARAMETER_VALUE
     FROM (
         -- Subconsulta para los valores del ejemplo
         SELECT 'BELONGS_TO_BLACK_LIST' AS PARAMETER_KEY, 'BELONGS_TO_BLACK_LIST' AS PARAMETER_DESC, 'false' AS PARAMETER_VALUE
         UNION ALL SELECT 'BLACK_LIST_RESPONSE_CODE', 'BLACK_LIST_RESPONSE_CODE', '0'
+        UNION ALL SELECT 'COVERAGE_KEY', 'COVERAGE_KEY', ''                                       
+        UNION ALL SELECT 'CONTRACT_TI', 'CONTRACT_TI', ''
         UNION ALL SELECT 'CUMULUS_VALUE', 'CUMULUS_VALUE', '0.0'
         UNION ALL SELECT 'DEPENDENTS', 'DEPENDENTS', '0'
         UNION ALL SELECT 'HAS_ANOTHER_PENDING_REQUEST', 'HAS_ANOTHER_PENDING_REQUEST', 'false'
