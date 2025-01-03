@@ -93,7 +93,7 @@ func main() {
 		return
 	}
 
-	aseguradosData, err := data_loader.CleanAseguradosData("pkg/utils/data/MIGSA_ASEGURADOS_CSV.csv")
+	aseguradosData, err := data_loader.CleanAseguradosData("pkg/utils/data/ASEGURADOS.csv")
 	if err != nil {
 		log.Fatalf("Error procesando CSV de asegurados: %v", err)
 	}
@@ -105,7 +105,7 @@ func main() {
 	r.Add(fmt.Sprintf("Datos de asegurados cargados en %v.", time.Since(blockStart)))
 
 	blockStart = time.Now()
-	polizasData, err := data_loader.CleanDataPolizas("pkg/utils/data/MIGSA_POLIZAS-18-12_CSV.csv")
+	polizasData, err := data_loader.CleanDataPolizas("pkg/utils/data/POLIZAS.csv")
 	if err != nil {
 		return
 	}
@@ -114,7 +114,7 @@ func main() {
 	}
 	r.Add(fmt.Sprintf("Datos de pólizas cargados en %v.", time.Since(blockStart)))
 
-	coberturasData, err := data_loader.CleanAndProcessCoverageData("pkg/utils/data/MIGSA_COBERTURAS_CSV.csv")
+	coberturasData, err := data_loader.CleanAndProcessCoverageData("pkg/utils/data/COBERTURAS.csv")
 	if err != nil {
 		log.Fatalf("Error procesando CSV de coberturas: %v", err)
 	}

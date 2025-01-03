@@ -40,10 +40,3 @@ func InsertPartyData(db *sql.Tx) error {
 	fmt.Printf("Total de registros insertados en PARTY: %d\n", totalInsertados)
 	return nil
 }
-
-//INSERT INTO PARTY (EMAIL, DATE_CREATED, PARTY_SEARCH_AS)
-//SELECT DISTINCT COALESCE(EMAIL, 'migracion@bicevida.cl'), NOW(),
-//CONCAT(APEPATERNO, ' ', APEMATERNO, ', ', NOMBRES)
-//FROM temp_csv_asegurados
-//WHERE EMAIL IS NOT NULL
-//ON DUPLICATE KEY UPDATE EMAIL=VALUES(EMAIL);
