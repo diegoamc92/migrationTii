@@ -132,7 +132,7 @@ func InsertPolicyCoverageValue(db *sql.Tx, ctx *MigrationContext) error {
         TAX_VALUE = VALUES(TAX_VALUE);
 	`
 
-	_, err := db.Exec(query, ctx.Ramo, ctx.NpolOri)
+	_, err := db.Exec(query, ctx.Ramo, ctx.NpolOri, ctx.Npoliza, ctx.ContractID)
 	if err != nil {
 		return fmt.Errorf("error insertando en POLICY_COVERAGE_VALUE para POLICY_ID %s-%s: %v", ctx.Ramo, ctx.NpolOri, err)
 	}

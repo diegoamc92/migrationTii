@@ -41,7 +41,7 @@ import (
 //		fmt.Printf("Total de registros insertados en PARTY: %d\n", totalInsertados)
 //		return nil
 //	}
-func InsertPartyWithContext(db *sql.Tx, ctx MigrationContext) error {
+func InsertPartyWithContext(db *sql.Tx, context MigrationContext) error {
 	query := `
 	INSERT INTO PARTY (
 		EMAIL,

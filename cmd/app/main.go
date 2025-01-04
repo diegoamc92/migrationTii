@@ -155,6 +155,14 @@ func main() {
 		log.Fatalf("Error iniciando transacción: %v", err)
 	}
 
+	if err := database.CreateTempTable(tx); err != nil {
+		return
+	}
+
+	if err := database.CreateCleanedTempTable(tx); err != nil {
+		return
+	}
+
 	// Cargar datos de temporales
 	aseguradosData, err := data_loader.CleanAseguradosData("pkg/utils/data/ASEGURADOS.csv")
 	if err != nil {
@@ -164,7 +172,7 @@ func main() {
 		log.Fatalf("Error insertando datos de asegurados en temp_csv_asegurados: %v", err)
 	}
 
-	polizasData, err := data_loader.CleanDataPolizas("pkg/utils/data/POLIZAS.csv")
+	polizasData, err := data_loader.CleanDataPolizas("pkg/utils/data/POLIZAS_CSV.csv")
 	if err != nil {
 		log.Fatalf("Error procesando CSV de pólizas: %v", err)
 	}
@@ -178,6 +186,11 @@ func main() {
 	}
 	if err := database.LoadCoberturasData(tx, coberturasData); err != nil {
 		log.Fatalf("Error insertando datos de coberturas en temp_csv_coberturas: %v", err)
+	}
+
+	// Crear y limpiar RUT
+	if err := database.CreateTempCleanedRUT(tx); err != nil {
+		log.Fatalf("Error creando tabla temporal RUT: %v", err)
 	}
 
 	// Obtener pólizas y procesarlas
@@ -216,11 +229,6 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 	// Insertar IDENTIFICATION
 	if err := database.InsertIdentificationWithContext(tx); err != nil {
 		return fmt.Errorf("error en IDENTIFICATION para póliza %s: %v", context.Npoliza, err)
-	}
-
-	// Crear y limpiar RUT
-	if err := database.CreateTempCleanedRUT(tx); err != nil {
-		log.Fatalf("Error creando tabla temporal RUT: %v", err)
 	}
 
 	// Insertar datos en IDENTIFICATION
@@ -336,9 +344,9 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 			log.Printf("Error insertando REQUEST_PARAMETER para REQUEST_ID %d: %v", ctx.RequestID, err)
 		}
 
-		if err := database.InsertBillingStatement(tx, &ctx); err != nil {
-			log.Fatalf("Error insertando en BILLING_STATEMENT: %v", err)
-		}
+		//if err := database.InsertBillingStatement(tx, &ctx); err != nil {
+		//	log.Fatalf("Error insertando en BILLING_STATEMENT: %v", err)
+		//}
 	}
 
 	return nil
