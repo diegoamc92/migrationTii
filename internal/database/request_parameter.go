@@ -7,7 +7,64 @@ import (
 )
 
 // RequestParameter inserta valores en la tabla REQUEST_COVERAGE_VALUE.
-func InsertRequestParameter(db *sql.Tx, requestID int64) error {
+//
+//	func InsertRequestParameter(db *sql.Tx, requestID int64) error {
+//		query := `
+//		INSERT INTO REQUEST_PARAMETER (
+//			REQUEST_ID,
+//			REQUEST_PARAMETER_KEY,
+//			REQUEST_PARAMETER_DESC,
+//			REQUEST_PARAMETER_VALUE
+//		)
+//		SELECT
+//			? AS REQUEST_ID, -- Procesar un único REQUEST_ID
+//			param.REQUEST_PARAMETER_KEY,
+//			param.REQUEST_PARAMETER_DESC,
+//			CASE
+//				WHEN param.REQUEST_PARAMETER_KEY = 'PAYMENT_DATE' THEN DATE_FORMAT(NOW(), '%d/%m/%Y')
+//				ELSE param.REQUEST_PARAMETER_VALUE
+//			END AS REQUEST_PARAMETER_VALUE
+//		FROM (
+//			SELECT 'BELONGS_TO_BLACK_LIST' AS REQUEST_PARAMETER_KEY, 'BELONGS_TO_BLACK_LIST' AS REQUEST_PARAMETER_DESC, 'false' AS REQUEST_PARAMETER_VALUE UNION ALL
+//			SELECT 'BLACK_LIST_RESPONSE_CODE', 'BLACK_LIST_RESPONSE_CODE', '0' UNION ALL
+//			SELECT 'CUMULUS_VALUE', 'CUMULUS_VALUE', '0.0' UNION ALL
+//			SELECT 'DEPENDENTS', 'DEPENDENTS', '0' UNION ALL
+//			SELECT 'HAS_ANOTHER_PENDING_REQUEST', 'HAS_ANOTHER_PENDING_REQUEST', 'false' UNION ALL
+//			SELECT 'HAS_EXTRA_PREMIUM_POLICY', 'HAS_EXTRA_PREMIUM_POLICY', 'false' UNION ALL
+//			SELECT 'HAS_FINANCIAL_RISK', 'HAS_FINANCIAL_RISK', 'false' UNION ALL
+//			SELECT 'HAS_REJECTED_REQUEST', 'HAS_REJECTED_REQUEST', 'false' UNION ALL
+//			SELECT 'HAS_RISKY_ACTIVITY', 'HAS_RISKY_ACTIVITY', 'false' UNION ALL
+//			SELECT 'HISTORIC_RISK', 'HISTORIC_RISK', 'false' UNION ALL
+//			SELECT 'IMC_VALUE', 'IMC_VALUE', '0.0' UNION ALL
+//			SELECT 'INSURED_AND_HOLDER_RELATIONSHIP_IS_OTHER', 'INSURED_AND_HOLDER_RELATIONSHIP_IS_OTHER', 'MISMO' UNION ALL
+//			SELECT 'INTEGRATION_TII', 'INTEGRATION_TII', 'true' UNION ALL
+//			SELECT 'IS_FOREIGN_PERSON', 'IS_FOREIGN_PERSON', 'false' UNION ALL
+//			SELECT 'PAYMENT_DATE', 'PAYMENT_DATE', NULL UNION ALL
+//			SELECT 'REQUEST_TOKEN', 'REQUEST_TOKEN', '8d57e3821dd307f0da90f1c2bf78ff9a9bd9139e53a49748089afab877943067' UNION ALL
+//			SELECT 'REQUEST_TOKEN_DATE', 'REQUEST_TOKEN_DATE', '1734444012629' UNION ALL
+//			SELECT 'REQUIRE_MEDICAL_PROTOCOL', 'REQUIRE_MEDICAL_PROTOCOL', 'false' UNION ALL
+//			SELECT 'RESOURCE_DATA', 'RESOURCE_DATA', 'MIGRACION TII' UNION ALL
+//			SELECT 'VALID_IMC', 'VALID_IMC', 'true' UNION ALL
+//			SELECT 'VALID_QUESTIONNAIRE', 'VALID_QUESTIONNAIRE', 'true' UNION ALL
+//			SELECT 'VALID_REINSURANCE_AMOUNT_VALIDATION', 'VALID_REINSURANCE_AMOUNT_VALIDATION', 'true'
+//		) param
+//		WHERE NOT EXISTS (
+//			SELECT 1
+//			FROM REQUEST_PARAMETER rp
+//			WHERE rp.REQUEST_ID = ?
+//			AND rp.REQUEST_PARAMETER_KEY = param.REQUEST_PARAMETER_KEY
+//		);
+//		`
+//
+//		_, err := db.Exec(query, requestID, requestID)
+//		if err != nil {
+//			return fmt.Errorf("error insertando en REQUEST_PARAMETER para REQUEST_ID %d: %v", requestID, err)
+//		}
+//
+//		log.Printf("Datos insertados en REQUEST_PARAMETER para REQUEST_ID: %d", requestID)
+//		return nil
+//	}
+func InsertRequestParameter(db *sql.Tx, ctx *MigrationContext) error {
 	query := `
 	INSERT INTO REQUEST_PARAMETER (
 		REQUEST_ID,
@@ -55,11 +112,11 @@ func InsertRequestParameter(db *sql.Tx, requestID int64) error {
 	);
 	`
 
-	_, err := db.Exec(query, requestID, requestID)
+	_, err := db.Exec(query, ctx.RequestID, ctx.RequestID)
 	if err != nil {
-		return fmt.Errorf("error insertando en REQUEST_PARAMETER para REQUEST_ID %d: %v", requestID, err)
+		return fmt.Errorf("error insertando en REQUEST_PARAMETER para REQUEST_ID %d: %v", ctx.RequestID, err)
 	}
 
-	log.Printf("Datos insertados en REQUEST_PARAMETER para REQUEST_ID: %d", requestID)
+	log.Printf("Datos insertados en REQUEST_PARAMETER para REQUEST_ID: %d", ctx.RequestID)
 	return nil
 }

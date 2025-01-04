@@ -6,8 +6,76 @@ import (
 	"log"
 )
 
-// RequestEconomics inserta datos en la tabla REQUEST_ECONOMICS.
-func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
+// Request Economics inserta datos en la tabla REQUEST_ECONOMICS.
+//
+//	func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
+//		query := `
+//		INSERT INTO REQUEST_ECONOMICS (
+//			ECONOMIC_ITEM_ID,
+//			REQUEST_ID,
+//			ECONOMIC_VALUE,
+//			ECONOMIC_VALUE_DATE
+//		)
+//		SELECT
+//			e.ECONOMIC_ITEM_ID,
+//			? AS REQUEST_ID,
+//			CASE
+//				WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(t.SUMAASG AS DECIMAL(15, 4)) -- SUMA ASEGURADA
+//				WHEN e.ECONOMIC_ITEM_ID = 29000 THEN CAST(t.PMAANUAL AS DECIMAL(15, 4)) -- PRIMA ANUAL
+//				WHEN e.ECONOMIC_ITEM_ID = 8000 THEN CAST(t.IVAANUAL AS DECIMAL(15, 4)) -- IVA
+//				ELSE 0.0000 -- Otros valores en 0
+//			END AS ECONOMIC_VALUE,
+//			NOW() AS ECONOMIC_VALUE_DATE
+//		FROM (
+//			SELECT 1000 AS ECONOMIC_ITEM_ID UNION ALL
+//			SELECT 2000 UNION ALL
+//			SELECT 3000 UNION ALL
+//			SELECT 4000 UNION ALL
+//			SELECT 5000 UNION ALL
+//			SELECT 6000 UNION ALL
+//			SELECT 7000 UNION ALL
+//			SELECT 8000 UNION ALL
+//			SELECT 9000 UNION ALL
+//			SELECT 10000 UNION ALL
+//			SELECT 11000 UNION ALL
+//			SELECT 12000 UNION ALL
+//			SELECT 13000 UNION ALL
+//			SELECT 14000 UNION ALL
+//			SELECT 15000 UNION ALL
+//			SELECT 16000 UNION ALL
+//			SELECT 17000 UNION ALL
+//			SELECT 18000 UNION ALL
+//			SELECT 19000 UNION ALL
+//			SELECT 20000 UNION ALL
+//			SELECT 21000 UNION ALL
+//			SELECT 24000 UNION ALL
+//			SELECT 25000 UNION ALL
+//			SELECT 26000 UNION ALL
+//			SELECT 28000 UNION ALL
+//			SELECT 29000
+//		) e
+//		JOIN temp_csv_coberturas t
+//			ON t.NPOLIZA = (
+//				SELECT NPOLIZA FROM REQUEST r WHERE r.REQUEST_ID = ?
+//			)
+//		WHERE NOT EXISTS (
+//			SELECT 1
+//			FROM REQUEST_ECONOMICS re
+//			WHERE re.ECONOMIC_ITEM_ID = e.ECONOMIC_ITEM_ID
+//			  AND re.REQUEST_ID = ?
+//		)
+//		GROUP BY e.ECONOMIC_ITEM_ID; -- Agrupa para evitar duplicados en la combinación
+//		`
+//
+//		_, err := db.Exec(query, requestID, requestID, requestID)
+//		if err != nil {
+//			return fmt.Errorf("error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", requestID, err)
+//		}
+//
+//		log.Printf("Datos insertados en REQUEST_ECONOMICS para REQUEST_ID: %d", requestID)
+//		return nil
+//	}
+func InsertRequestEconomics(db *sql.Tx, ctx *MigrationContext) error {
 	query := `
 	INSERT INTO REQUEST_ECONOMICS (
 		ECONOMIC_ITEM_ID,
@@ -19,9 +87,9 @@ func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
 		e.ECONOMIC_ITEM_ID,
 		? AS REQUEST_ID,
 		CASE
-			WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(t.SUMAASG AS DECIMAL(15, 4)) -- SUMA ASEGURADA
-			WHEN e.ECONOMIC_ITEM_ID = 29000 THEN CAST(t.PMAANUAL AS DECIMAL(15, 4)) -- PRIMA ANUAL
-			WHEN e.ECONOMIC_ITEM_ID = 8000 THEN CAST(t.IVAANUAL AS DECIMAL(15, 4)) -- IVA
+			WHEN e.ECONOMIC_ITEM_ID = 9000 THEN CAST(c.SUMAASG AS DECIMAL(15, 4)) -- SUMA ASEGURADA
+			WHEN e.ECONOMIC_ITEM_ID = 29000 THEN CAST(c.PMAANUAL AS DECIMAL(15, 4)) -- PRIMA ANUAL
+			WHEN e.ECONOMIC_ITEM_ID = 8000 THEN CAST(c.IVAANUAL AS DECIMAL(15, 4)) -- IVA
 			ELSE 0.0000 -- Otros valores en 0
 		END AS ECONOMIC_VALUE,
 		NOW() AS ECONOMIC_VALUE_DATE
@@ -53,24 +121,22 @@ func InsertRequestEconomics(db *sql.Tx, requestID int64) error {
 		SELECT 28000 UNION ALL
 		SELECT 29000
 	) e
-	JOIN temp_csv_coberturas t
-		ON t.NPOLIZA = (
-			SELECT NPOLIZA FROM REQUEST r WHERE r.REQUEST_ID = ?
-		)
+	JOIN temp_csv_coberturas c
+		ON c.RAMO = ? AND c.NPOLIZA = ? -- Filtrar por la póliza en el contexto
 	WHERE NOT EXISTS (
 		SELECT 1
 		FROM REQUEST_ECONOMICS re
 		WHERE re.ECONOMIC_ITEM_ID = e.ECONOMIC_ITEM_ID
 		  AND re.REQUEST_ID = ?
 	)
-	GROUP BY e.ECONOMIC_ITEM_ID; -- Agrupa para evitar duplicados en la combinación
+	GROUP BY e.ECONOMIC_ITEM_ID; -- Agrupa para evitar duplicados
 	`
 
-	_, err := db.Exec(query, requestID, requestID, requestID)
+	_, err := db.Exec(query, ctx.RequestID, ctx.Ramo, ctx.Npoliza, ctx.RequestID)
 	if err != nil {
-		return fmt.Errorf("error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", requestID, err)
+		return fmt.Errorf("error insertando en REQUEST_ECONOMICS para REQUEST_ID %d: %v", ctx.RequestID, err)
 	}
 
-	log.Printf("Datos insertados en REQUEST_ECONOMICS para REQUEST_ID: %d", requestID)
+	log.Printf("Datos insertados en REQUEST_ECONOMICS para REQUEST_ID: %d", ctx.RequestID)
 	return nil
 }
