@@ -231,11 +231,6 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 		return fmt.Errorf("error en IDENTIFICATION para póliza %s: %v", context.Npoliza, err)
 	}
 
-	// Insertar datos en IDENTIFICATION
-	if err := database.InsertIdentificationWithContext(tx); err != nil {
-		log.Fatalf("Error insertando datos en IDENTIFICATION: %v", err)
-	}
-
 	// Asociar IDENTIFICATION con PARTY
 	if err := database.AssociatePartyIdentificationWithContext(tx, context); err != nil {
 		log.Fatalf("Error asociando PARTY_IDENTIFICATION: %v", err)
