@@ -11,7 +11,7 @@ import (
 
 func CreateConnection(cfg *config.Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+		cfg.IsbDBUser, cfg.IsbDBPassword, cfg.IsbDBHost, cfg.IsbDBPort, cfg.IsbDBName)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

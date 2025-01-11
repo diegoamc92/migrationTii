@@ -5,70 +5,41 @@ import (
 	"fmt"
 )
 
-func CreateTempCleanedRUT(db *sql.Tx) error {
-	query := `
-	CREATE TEMPORARY TABLE temp_cleaned_rut AS
-	SELECT DISTINCT
-	    RUT,
-	    CONCAT(
-	            TRIM(LEADING '0' FROM REPLACE(SUBSTRING_INDEX(RUT, '-', 1), '.', '')),
-	            CASE
-	                WHEN RIGHT(RUT, 1) = 'K' THEN 'K'
-	                ELSE RIGHT(RUT, 1)
-	            END
-	    ) AS CLEAN_RUT
-	FROM temp_csv_asegurados
-	WHERE RUT IS NOT NULL AND RUT != '';
-	`
-
-	_, err := db.Exec(query)
-	if err != nil {
-		return fmt.Errorf("error creando temp_cleaned_rut: %v", err)
-	}
-	fmt.Println("Tabla temp_cleaned_rut creada correctamente.")
-	return nil
-}
-
-func InsertIdentificationWithContext(db *sql.Tx) error {
+func InsertIdentificationWithContext(tx *sql.Tx) error {
 	query := `
 	INSERT INTO IDENTIFICATION (IDENTIFICATION, IDENTIFICATION_TYPE_ID)
-	SELECT CLEAN_RUT, 1
-	FROM temp_cleaned_rut
+	SELECT DISTINCT RUT, 1
+	FROM tiisa.asegurados
+	WHERE RUT IS NOT NULL AND RUT != ''
 	ON DUPLICATE KEY UPDATE IDENTIFICATION=VALUES(IDENTIFICATION);
 	`
 
-	_, err := db.Exec(query)
+	_, err := tx.Exec(query)
 	if err != nil {
-		return fmt.Errorf("error insertando en IDENTIFICATION: %v", err)
+		return fmt.Errorf("error insertando en IDENTIFICATION desde asegurados: %v", err)
 	}
-	fmt.Println("Datos insertados en IDENTIFICATION correctamente.")
+	fmt.Println("Datos insertados en IDENTIFICATION correctamente desde asegurados.")
 	return nil
 }
 
-func AssociatePartyIdentificationWithContext(db *sql.Tx, context MigrationContext) error {
+func AssociatePartyIdentificationWithContext(tx *sql.Tx, context MigrationContext) error {
 	query := `
 	INSERT IGNORE INTO PARTY_IDENTIFICATION (PARTY_ID, IDENTIFICATION_ID)
 	SELECT p.PARTY_ID, i.IDENTIFICATION_ID
 	FROM PARTY p
-	JOIN temp_csv_asegurados t 
+	JOIN tiisa.asegurados t 
 		ON p.PARTY_SEARCH_AS = CONCAT_WS(', ', t.APEPATERNO, t.APEMATERNO, t.NOMBRES)
 		AND t.RAMO = ? AND t.NPOLIZA = ?
 	JOIN IDENTIFICATION i 
-		ON i.IDENTIFICATION = CONCAT(
-	            TRIM(LEADING '0' FROM REPLACE(SUBSTRING_INDEX(t.RUT, '-', 1), '.', '')),
-	            CASE
-	                WHEN RIGHT(t.RUT, 1) = 'K' THEN 'K'
-	                ELSE RIGHT(t.RUT, 1)
-	            END
-	)
+		ON i.IDENTIFICATION = t.RUT
 	WHERE t.RUT IS NOT NULL AND t.RUT != ''
 	ON DUPLICATE KEY UPDATE IDENTIFICATION_ID = i.IDENTIFICATION_ID;
 	`
 
-	_, err := db.Exec(query, context.Ramo, context.Npoliza)
+	_, err := tx.Exec(query, context.Ramo, context.Npoliza)
 	if err != nil {
 		return fmt.Errorf("error asociando PARTY_IDENTIFICATION para póliza %s: %v", context.Npoliza, err)
 	}
-	fmt.Printf("PARTY_IDENTIFICATION asociada correctamente para RAMO: %s, NPOLIZA: %s\n", context.Ramo, context.Npoliza)
+	fmt.Printf("PARTY_IDENTIFICATION asociada correctamente para RAMO: %s, NPOLIZA: %s.\n", context.Ramo, context.Npoliza)
 	return nil
 }

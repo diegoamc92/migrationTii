@@ -8,27 +8,27 @@ import (
 
 // MigrationContext representa los datos necesarios para migrar una póliza
 type MigrationContext struct {
-	Npoliza         string
-	Npolori         string
-	Ramo            string
-	RUT             string
-	Nombres         string
-	ApeMaterno      string
-	ApePaterno      string
-	Parentesco      string
-	CoberturaTipo   string
-	MontoCobertura  float64
-	Email           string
-	Telefono        string
-	Direccion       string
-	Ciudad          string
-	Region          string
-	Pais            string
-	Premium         float64
-	Deductible      float64
-	ContractID      int64
-	RequestID       int64
-	AdherentID      int64
+	Npoliza        string
+	Npolori        string
+	Ramo           string
+	RUT            string
+	Nombres        string
+	ApeMaterno     string
+	ApePaterno     string
+	Parentesco     string
+	CoberturaTipo  string
+	MontoCobertura float64
+	Email          string
+	Telefono       string
+	Direccion      string
+	Ciudad         string
+	Region         string
+	Pais           string
+	Premium        float64
+	Deductible     float64
+	ContractID     int64
+	RequestID      int64
+	AdherentID     int64
 }
 
 // ProcessPoliza maneja la lógica de inserciones para una póliza
@@ -46,6 +46,16 @@ func ProcessPoliza(tx *sql.Tx, context MigrationContext) error {
 	// Asociar IDENTIFICATION con PARTY
 	if err := AssociatePartyIdentificationWithContext(tx, context); err != nil {
 		return fmt.Errorf("error asociando PARTY_IDENTIFICATION: %v", err)
+	}
+
+	// Insertar inInsertInsuredData
+	if err := InsertInsuredData(tx); err != nil {
+		return fmt.Errorf("error insertando INSURED_DATA: %v", err)
+	}
+
+	// InsertPolicyHolderData
+	if err := InsertPolicyHolderData(tx); err != nil {
+		return fmt.Errorf("error insertando POLICY_HOLDER: %v", err)
 	}
 
 	// Insertar EMAIL, PHONE, ADDRESS

@@ -1,230 +1,225 @@
 package database
 
-import (
-	"database/sql"
-	"fmt"
-	"log"
-	"os"
-	"strings"
-)
+// import (
+// 	"database/sql"
+// 	"fmt"
+// 	"log"
+// 	"strings"
+// )
 
-// file Exists verifica si un archivo existe en la ruta proporcionada.
-func fileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
-	return err == nil
-}
+// // file Exists verifica si un archivo existe en la ruta proporcionada.
 
-// Create TempTables crea tablas temporales para asegurados y pólizas.
-func CreateTempTable(db *sql.Tx) error {
-	queries := []string{
-		`CREATE TEMPORARY TABLE temp_csv_asegurados (
-			RAMO INT, NPOLIZA VARCHAR(50), NOMBRES VARCHAR(255),
-			APEMATERNO VARCHAR(100), APEPATERNO VARCHAR(100), RUT VARCHAR(50),
-			FECNAC DATE, CLAVESEXO INT, DESCSEXO VARCHAR(50), CODCIVIL INT,
-			ESTCIVIL VARCHAR(50), TELEFONO VARCHAR(50), EMAIL VARCHAR(200),
-			DIRECCION VARCHAR(255), CODREGION INT, REGION VARCHAR(100),
-			CODCOMUNA INT, COMUNA VARCHAR(100), CODCIUDAD INT, CIUDAD VARCHAR(100)
-		) CHARSET=utf8mb4;`,
+// // Create TempTables crea tablas temporales para asegurados y pólizas.
+// func CreateTempTable(db *sql.Tx) error {
+// 	queries := []string{
+// 		`CREATE TEMPORARY TABLE temp_csv_asegurados (
+// 			RAMO INT, NPOLIZA VARCHAR(50), NOMBRES VARCHAR(255),
+// 			APEMATERNO VARCHAR(100), APEPATERNO VARCHAR(100), RUT VARCHAR(50),
+// 			FECNAC DATE, CLAVESEXO INT, DESCSEXO VARCHAR(50), CODCIVIL INT,
+// 			ESTCIVIL VARCHAR(50), TELEFONO VARCHAR(50), EMAIL VARCHAR(200),
+// 			DIRECCION VARCHAR(255), CODREGION INT, REGION VARCHAR(100),
+// 			CODCOMUNA INT, COMUNA VARCHAR(100), CODCIUDAD INT, CIUDAD VARCHAR(100)
+// 		) CHARSET=utf8mb4;`,
 
-		`CREATE TEMPORARY TABLE temp_csv_polizas (
-			RAMO INT, NPOLIZA VARCHAR(50), REQUEST VARCHAR(50), CODESTADO VARCHAR(10),
-			ESTADO VARCHAR(50), NPOLORI VARCHAR(50), FINIVIG DATE, FTERVIG DATE,
-			IDCONDCOBRO VARCHAR(50), DESCCONDCOBRO VARCHAR(100), TPCONDCOBRO VARCHAR(10),
-			DESCTPCONDCOBRO VARCHAR(50),NROCONDCOBRO INT, IDPERIODPAGO VARCHAR(10), DESCPERPAGO VARCHAR(50)
-		);`,
+// 		`CREATE TEMPORARY TABLE temp_csv_polizas (
+// 			RAMO INT, NPOLIZA VARCHAR(50), REQUEST VARCHAR(50), CODESTADO VARCHAR(10),
+// 			ESTADO VARCHAR(50), NPOLORI VARCHAR(50), FINIVIG DATE, FTERVIG DATE,
+// 			IDCONDCOBRO VARCHAR(50), DESCCONDCOBRO VARCHAR(100), TPCONDCOBRO VARCHAR(10),
+// 			DESCTPCONDCOBRO VARCHAR(50),NROCONDCOBRO INT, IDPERIODPAGO VARCHAR(10), DESCPERPAGO VARCHAR(50)
+// 		);`,
 
-		`CREATE TEMPORARY TABLE temp_csv_coberturas (
-		RAMO INT,
-		NPOLIZA VARCHAR(20),
-		DEPEND VARCHAR(10),
-		CLAVCOB VARCHAR(10),
-		TIPOADIC VARCHAR(10),
-		CLAVADIC VARCHAR(10),
-		FINICOB DATE,
-		FTERMCOV DATE,
-		EDAD INT,
-		SUMAASG DECIMAL(15,2),
-		PMAANUAL DECIMAL(15,4),
-		EXTRAPRIMA DECIMAL(15,4),
-		IVAANUAL DECIMAL(15,4)
-	);
-		`,
-	}
+// 		`CREATE TEMPORARY TABLE temp_csv_coberturas (
+// 		RAMO INT,
+// 		NPOLIZA VARCHAR(20),
+// 		DEPEND VARCHAR(10),
+// 		CLAVCOB VARCHAR(10),
+// 		TIPOADIC VARCHAR(10),
+// 		CLAVADIC VARCHAR(10),
+// 		FINICOB DATE,
+// 		FTERMCOV DATE,
+// 		EDAD INT,
+// 		SUMAASG DECIMAL(15,2),
+// 		PMAANUAL DECIMAL(15,4),
+// 		EXTRAPRIMA DECIMAL(15,4),
+// 		IVAANUAL DECIMAL(15,4)
+// 	);
+// 		`,
+// 	}
 
-	fmt.Println("Creando tablas temporales...")
+// 	fmt.Println("Creando tablas temporales...")
 
-	for _, query := range queries {
-		if _, err := db.Exec(query); err != nil {
-			return fmt.Errorf("error creando tabla temporal: %v", err)
-		}
-	}
-	fmt.Println("Tablas temporales creadas exitosamente.")
-	log.Println(queries)
-	return nil
-}
+// 	for _, query := range queries {
+// 		if _, err := db.Exec(query); err != nil {
+// 			return fmt.Errorf("error creando tabla temporal: %v", err)
+// 		}
+// 	}
+// 	fmt.Println("Tablas temporales creadas exitosamente.")
+// 	log.Println(queries)
+// 	return nil
+// }
 
-// Create Cleaned Temp Table crea una tabla temporal con datos únicos.
-func CreateCleanedTempTable(db *sql.Tx) error {
-	query := `
-	CREATE TEMPORARY TABLE temp_cleaned_data_asegurados AS
-	SELECT RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO,
-	       DESCSEXO, CODCIVIL, ESTCIVIL,
-	       MAX(TELEFONO)  AS TELEFONO,
-	       MAX(EMAIL)     AS EMAIL,
-	       MAX(DIRECCION) AS DIRECCION,
-	       CODREGION, REGION, CODCOMUNA, COMUNA, CODCIUDAD, CIUDAD
-	FROM temp_csv_asegurados
-	GROUP BY RUT;
-	`
+// // Create Cleaned Temp Table crea una tabla temporal con datos únicos.
+// func CreateCleanedTempTable(db *sql.Tx) error {
+// 	query := `
+// 	CREATE TEMPORARY TABLE temp_cleaned_data_asegurados AS
+// 	SELECT RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO,
+// 	       DESCSEXO, CODCIVIL, ESTCIVIL,
+// 	       MAX(TELEFONO)  AS TELEFONO,
+// 	       MAX(EMAIL)     AS EMAIL,
+// 	       MAX(DIRECCION) AS DIRECCION,
+// 	       CODREGION, REGION, CODCOMUNA, COMUNA, CODCIUDAD, CIUDAD
+// 	FROM temp_csv_asegurados
+// 	GROUP BY RUT;
+// 	`
 
-	fmt.Println("Creando tabla limpia temporal (temp_cleaned_data_asegurados)...")
+// 	fmt.Println("Creando tabla limpia temporal (temp_cleaned_data_asegurados)...")
 
-	if _, err := db.Exec(query); err != nil {
-		return fmt.Errorf("error creando temp_cleaned_data_asegurados: %v", err)
-	}
-	fmt.Println("Tabla temp_cleaned_data_asegurados creada correctamente.")
-	log.Println(query)
-	return nil
-}
+// 	if _, err := db.Exec(query); err != nil {
+// 		return fmt.Errorf("error creando temp_cleaned_data_asegurados: %v", err)
+// 	}
+// 	fmt.Println("Tabla temp_cleaned_data_asegurados creada correctamente.")
+// 	log.Println(query)
+// 	return nil
+// }
 
-// Load AseguradosData carga los datos procesados a la tabla temp_csv_asegurados.
-func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
-	query := `INSERT INTO temp_csv_asegurados (
-		RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO, 
-		ESTCIVIL, TELEFONO, EMAIL, DIRECCION, CODREGION, REGION, CODCOMUNA, 
-		COMUNA, CODCIUDAD, CIUDAD
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+// // Load AseguradosData carga los datos procesados a la tabla temp_csv_asegurados.
+// func LoadAseguradosData(db *sql.Tx, records []map[string]string) error {
+// 	query := `INSERT INTO temp_csv_asegurados (
+// 		RAMO, NPOLIZA, NOMBRES, APEMATERNO, APEPATERNO, RUT, FECNAC, CLAVESEXO,
+// 		ESTCIVIL, TELEFONO, EMAIL, DIRECCION, CODREGION, REGION, CODCOMUNA,
+// 		COMUNA, CODCIUDAD, CIUDAD
+// 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return fmt.Errorf("error preparando la consulta: %v", err)
-	}
-	defer stmt.Close()
+// 	stmt, err := db.Prepare(query)
+// 	if err != nil {
+// 		return fmt.Errorf("error preparando la consulta: %v", err)
+// 	}
+// 	defer stmt.Close()
 
-	for i, row := range records {
+// 	for i, row := range records {
 
-		queryData := strings.Replace(query, "?", "'%v'", -1)
-		log.Println(fmt.Sprintf(queryData, row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
-			row["FECNAC"], row["CLAVESEXO"], row["ESTCIVIL"], row["TELEFONO"], row["EMAIL"], row["DIRECCION"],
-			row["CODREGION"], row["REGION"], row["CODCOMUNA"], row["COMUNA"], row["CODCIUDAD"], row["CIUDAD"]))
+// 		queryData := strings.Replace(query, "?", "'%v'", -1)
+// 		log.Println(fmt.Sprintf(queryData, row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
+// 			row["FECNAC"], row["CLAVESEXO"], row["ESTCIVIL"], row["TELEFONO"], row["EMAIL"], row["DIRECCION"],
+// 			row["CODREGION"], row["REGION"], row["CODCOMUNA"], row["COMUNA"], row["CODCIUDAD"], row["CIUDAD"]))
 
-		_, err := stmt.Exec(
-			row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
-			row["FECNAC"], row["CLAVESEXO"], row["ESTCIVIL"], row["TELEFONO"], row["EMAIL"], row["DIRECCION"],
-			row["CODREGION"], row["REGION"], row["CODCOMUNA"], row["COMUNA"], row["CODCIUDAD"], row["CIUDAD"],
-		)
+// 		_, err := stmt.Exec(
+// 			row["RAMO"], row["NPOLIZA"], row["NOMBRES"], row["APEMATERNO"], row["APEPATERNO"], row["RUT"],
+// 			row["FECNAC"], row["CLAVESEXO"], row["ESTCIVIL"], row["TELEFONO"], row["EMAIL"], row["DIRECCION"],
+// 			row["CODREGION"], row["REGION"], row["CODCOMUNA"], row["COMUNA"], row["CODCIUDAD"], row["CIUDAD"],
+// 		)
 
-		if err != nil {
-			log.Printf("Error insertando fila #%d: %v. Datos: %+v", i+1, err, row)
-			return fmt.Errorf("error insertando fila: %v", err)
-		}
-	}
-	log.Println("Datos de asegurados insertados correctamente en temp_csv_asegurados.")
-	log.Println(query)
-	return nil
-}
+// 		if err != nil {
+// 			log.Printf("Error insertando fila #%d: %v. Datos: %+v", i+1, err, row)
+// 			return fmt.Errorf("error insertando fila: %v", err)
+// 		}
+// 	}
+// 	log.Println("Datos de asegurados insertados correctamente en temp_csv_asegurados.")
+// 	log.Println(query)
+// 	return nil
+// }
 
-// Load PolizasData carga los datos procesados a la tabla temp_csv_polizas.
-func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
-	query := `INSERT INTO temp_csv_polizas (
-		RAMO, NPOLIZA, REQUEST, CODESTADO, ESTADO, NPOLORI, FINIVIG, FTERVIG,
-		IDCONDCOBRO, DESCCONDCOBRO, TPCONDCOBRO, DESCTPCONDCOBRO, NROCONDCOBRO, IDPERIODPAGO, DESCPERPAGO
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+// // Load PolizasData carga los datos procesados a la tabla temp_csv_polizas.
+// func LoadPolizasData(db *sql.Tx, data []map[string]string) error {
+// 	query := `INSERT INTO temp_csv_polizas (
+// 		RAMO, NPOLIZA, REQUEST, CODESTADO, ESTADO, NPOLORI, FINIVIG, FTERVIG,
+// 		IDCONDCOBRO, DESCCONDCOBRO, TPCONDCOBRO, DESCTPCONDCOBRO, NROCONDCOBRO, IDPERIODPAGO, DESCPERPAGO
+// 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return fmt.Errorf("error preparando la consulta: %v", err)
-	}
-	defer stmt.Close()
+// 	stmt, err := db.Prepare(query)
+// 	if err != nil {
+// 		return fmt.Errorf("error preparando la consulta: %v", err)
+// 	}
+// 	defer stmt.Close()
 
-	for _, row := range data {
-		_, err := stmt.Exec(
-			row["RAMO"], row["NPOLIZA"], row["REQUEST"], row["CODESTADO"],
-			row["ESTADO"], row["NPOLORI"], row["FINIVIG"], row["FTERVIG"],
-			row["IDCONDCOBRO"], row["DESCCONDCOBRO"], row["TPCONDCOBRO"],
-			row["DESCTPCONDCOBRO"], row["NROCONDCOBRO"], row["IDPERIODPAGO"], row["DESCPERPAGO"],
-		)
-		log.Println(row)
-		if err != nil {
-			return fmt.Errorf("error insertando pólizas: %v", err)
-		}
-	}
-	fmt.Println("Datos de pólizas insertados correctamente.")
-	log.Println(query)
-	return nil
-}
+// 	for _, row := range data {
+// 		_, err := stmt.Exec(
+// 			row["RAMO"], row["NPOLIZA"], row["REQUEST"], row["CODESTADO"],
+// 			row["ESTADO"], row["NPOLORI"], row["FINIVIG"], row["FTERVIG"],
+// 			row["IDCONDCOBRO"], row["DESCCONDCOBRO"], row["TPCONDCOBRO"],
+// 			row["DESCTPCONDCOBRO"], row["NROCONDCOBRO"], row["IDPERIODPAGO"], row["DESCPERPAGO"],
+// 		)
+// 		log.Println(row)
+// 		if err != nil {
+// 			return fmt.Errorf("error insertando pólizas: %v", err)
+// 		}
+// 	}
+// 	fmt.Println("Datos de pólizas insertados correctamente.")
+// 	log.Println(query)
+// 	return nil
+// }
 
-func LoadCoberturasData(db *sql.Tx, data []map[string]string) error {
-	query := `INSERT INTO temp_csv_coberturas (
-		RAMO, NPOLIZA, DEPEND, CLAVCOB, TIPOADIC, CLAVADIC, FINICOB, FTERMCOV,
-		EDAD, SUMAASG, PMAANUAL, EXTRAPRIMA, IVAANUAL
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+// func LoadCoberturasData(db *sql.Tx, data []map[string]string) error {
+// 	query := `INSERT INTO temp_csv_coberturas (
+// 		RAMO, NPOLIZA, DEPEND, CLAVCOB, TIPOADIC, CLAVADIC, FINICOB, FTERMCOV,
+// 		EDAD, SUMAASG, PMAANUAL, EXTRAPRIMA, IVAANUAL
+// 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return fmt.Errorf("error preparando la consulta: %v", err)
-	}
-	defer stmt.Close()
+// 	stmt, err := db.Prepare(query)
+// 	if err != nil {
+// 		return fmt.Errorf("error preparando la consulta: %v", err)
+// 	}
+// 	defer stmt.Close()
 
-	for _, row := range data {
-		_, err := stmt.Exec(
-			row["RAMO"], row["NPOLIZA"], row["DEPEND"], row["CLAVCOB"],
-			row["TIPOADIC"], row["CLAVADIC"], row["FINICOB"], row["FTERMCOV"],
-			row["EDAD"], row["SUMAASG"], row["PMAANUAL"], row["EXTRAPRIMA"], row["IVAANUAL"],
-		)
-		log.Println(row)
-		if err != nil {
-			return fmt.Errorf("error insertando datos en temp_csv_coberturas: %v", err)
-		}
-	}
-	fmt.Println("Datos de cobertura insertados correctamente.")
-	return nil
-}
+// 	for _, row := range data {
+// 		_, err := stmt.Exec(
+// 			row["RAMO"], row["NPOLIZA"], row["DEPEND"], row["CLAVCOB"],
+// 			row["TIPOADIC"], row["CLAVADIC"], row["FINICOB"], row["FTERMCOV"],
+// 			row["EDAD"], row["SUMAASG"], row["PMAANUAL"], row["EXTRAPRIMA"], row["IVAANUAL"],
+// 		)
+// 		log.Println(row)
+// 		if err != nil {
+// 			return fmt.Errorf("error insertando datos en temp_csv_coberturas: %v", err)
+// 		}
+// 	}
+// 	fmt.Println("Datos de cobertura insertados correctamente.")
+// 	return nil
+// }
 
-func CreateTempOriginalPolicyTable(db *sql.Tx) error {
-	query := `
-    CREATE TEMPORARY TABLE temp_original_policy AS
-    SELECT
-        RAMO,
-        NPOLORI,
-        MIN(FINIVIG) AS POLICY_ISSUANCE_DATE,
-        MIN(FTERVIG) AS POLICY_ENDORSEMENT_DATE_TO
-    FROM temp_csv_polizas
-    WHERE CODESTADO = '03'
-    GROUP BY RAMO, NPOLORI;`
-	_, err := db.Exec(query)
-	if err != nil {
-		return fmt.Errorf("error creando temp_original_policy: %v", err)
-	}
-	fmt.Println("Tabla temporal temp_original_policy creada correctamente.")
-	return nil
-}
-func GetPolizasFromTempTable(db *sql.Tx) ([]map[string]string, error) {
-	query := `
-    SELECT DISTINCT RAMO, NPOLIZA, NPOLORI
-    FROM temp_csv_polizas
-    WHERE CODESTADO = '03';
-    `
+// func CreateTempOriginalPolicyTable(db *sql.Tx) error {
+// 	query := `
+//     CREATE TEMPORARY TABLE temp_original_policy AS
+//     SELECT
+//         RAMO,
+//         NPOLORI,
+//         MIN(FINIVIG) AS POLICY_ISSUANCE_DATE,
+//         MIN(FTERVIG) AS POLICY_ENDORSEMENT_DATE_TO
+//     FROM temp_csv_polizas
+//     WHERE CODESTADO = '03'
+//     GROUP BY RAMO, NPOLORI;`
+// 	_, err := db.Exec(query)
+// 	if err != nil {
+// 		return fmt.Errorf("error creando temp_original_policy: %v", err)
+// 	}
+// 	fmt.Println("Tabla temporal temp_original_policy creada correctamente.")
+// 	return nil
+// }
+// func GetPolizasFromTempTable(db *sql.Tx) ([]map[string]string, error) {
+// 	query := `
+//     SELECT DISTINCT RAMO, NPOLIZA, NPOLORI
+//     FROM temp_csv_polizas
+//     WHERE CODESTADO = '03';
+//     `
 
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("error recuperando pólizas: %v", err)
-	}
-	defer rows.Close()
+// 	rows, err := db.Query(query)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error recuperando pólizas: %v", err)
+// 	}
+// 	defer rows.Close()
 
-	var polizas []map[string]string
-	for rows.Next() {
-		var ramo, nPoliza, nPolOri string
-		if err := rows.Scan(&ramo, &nPoliza, &nPolOri); err != nil {
-			return nil, fmt.Errorf("error leyendo datos de pólizas: %v", err)
-		}
+// 	var polizas []map[string]string
+// 	for rows.Next() {
+// 		var ramo, nPoliza, nPolOri string
+// 		if err := rows.Scan(&ramo, &nPoliza, &nPolOri); err != nil {
+// 			return nil, fmt.Errorf("error leyendo datos de pólizas: %v", err)
+// 		}
 
-		polizas = append(polizas, map[string]string{
-			"RAMO":    ramo,
-			"NPOLIZA": nPoliza,
-			"NPOLORI": nPolOri,
-		})
-	}
+// 		polizas = append(polizas, map[string]string{
+// 			"RAMO":    ramo,
+// 			"NPOLIZA": nPoliza,
+// 			"NPOLORI": nPolOri,
+// 		})
+// 	}
 
-	return polizas, nil
-}
+// 	return polizas, nil
+// }

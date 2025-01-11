@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"migrationTii/internal/utils"
 	"os"
 	"strings"
 )
@@ -71,7 +72,11 @@ func ProcessTXTFile(db *sql.DB, filePath string, tableName string) error {
 	for _, row := range rows {
 		values := make([]interface{}, len(row))
 		for i, val := range row {
-			values[i] = strings.TrimSpace(val)
+			cleanedValue := strings.TrimSpace(val)
+			if headers[i] == "RUT" {
+				cleanedValue = utils.CleanRUT(cleanedValue)
+			}
+			values[i] = cleanedValue
 		}
 		if _, err := stmt.Exec(values...); err != nil {
 			log.Printf("Error insertando fila: %v", err)
