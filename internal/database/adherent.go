@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func InsertAdherents(db *sql.Tx, ctx *MigrationContext) error {
+func InsertAdherent(db *sql.Tx, ctx *MigrationContext) error {
 	query := `
     INSERT INTO ADHERENT (
         ITEM_ID,

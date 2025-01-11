@@ -6,51 +6,6 @@ import (
 	"log"
 )
 
-// Inserta datos en PERSON
-//
-//	func InsertPersonData(db *sql.Tx) error {
-//		query := `
-//		INSERT INTO PERSON (
-//			PARTY_ID, GENDER_ID, MARITAL_STATUS_ID, FIRST_NAME, LAST_NAME, MOTHER_LAST_NAME, BIRTH_DATE
-//		)
-//		SELECT DISTINCT
-//			p.PARTY_ID,
-//			CASE t.CLAVESEXO
-//				WHEN 1 THEN 1 -- MASCULINO
-//				WHEN 2 THEN 2 -- FEMENINO
-//				ELSE NULL
-//			END AS GENDER_ID,
-//			CASE t.ESTCIVIL
-//				WHEN 1 THEN 1 -- SOLTERO
-//				WHEN 2 THEN 2 -- CASADO
-//				WHEN 3 THEN 4 -- SEPARADO -> DIVORCIADO
-//				WHEN 4 THEN 8 -- VIUDO
-//				ELSE NULL
-//			END AS MARITAL_STATUS_ID,
-//			TRIM(t.NOMBRES) AS FIRST_NAME,
-//			t.APEPATERNO AS LAST_NAME,
-//			t.APEMATERNO AS MOTHER_LAST_NAME,
-//			t.FECNAC AS BIRTH_DATE
-//		FROM temp_csv_asegurados t
-//		JOIN PARTY p ON p.EMAIL = t.EMAIL
-//		WHERE t.RUT IS NOT NULL
-//		ON DUPLICATE KEY UPDATE
-//			GENDER_ID = IF(VALUES(GENDER_ID) <> GENDER_ID, VALUES(GENDER_ID), GENDER_ID),
-//			MARITAL_STATUS_ID = IF(VALUES(MARITAL_STATUS_ID) <> MARITAL_STATUS_ID, VALUES(MARITAL_STATUS_ID), MARITAL_STATUS_ID),
-//			FIRST_NAME = IF(VALUES(FIRST_NAME) <> FIRST_NAME, VALUES(FIRST_NAME), FIRST_NAME),
-//			LAST_NAME = IF(VALUES(LAST_NAME) <> LAST_NAME, VALUES(LAST_NAME), LAST_NAME),
-//			MOTHER_LAST_NAME = IF(VALUES(MOTHER_LAST_NAME) <> MOTHER_LAST_NAME, VALUES(MOTHER_LAST_NAME), MOTHER_LAST_NAME),
-//			BIRTH_DATE = IF(VALUES(BIRTH_DATE) <> BIRTH_DATE, VALUES(BIRTH_DATE), BIRTH_DATE);
-//		`
-//
-//		_, err := db.Exec(query)
-//		if err != nil {
-//			return fmt.Errorf("error insertando en PERSON: %v", err)
-//		}
-//		fmt.Println("Datos insertados o actualizados en PERSON correctamente.")
-//		log.Println(query)
-//		return nil
-//	}
 func InsertPersonData(db *sql.Tx, ctx MigrationContext) error {
 	query := `
 	INSERT INTO PERSON (

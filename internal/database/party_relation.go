@@ -29,7 +29,7 @@ func InsertPartyRelation(db *sql.Tx, ctx *MigrationContext) error {
         PARTY_RELATION_TYPE_ID = VALUES(PARTY_RELATION_TYPE_ID);
     `
 
-	_, err := db.Exec(query, ctx.NpolOri, ctx.Ramo, ctx.Npoliza, ctx.NpolOri)
+    _, err := db.Exec(query, ctx.Npolori, ctx.Ramo, ctx.Npoliza, ctx.Npolori)
 	if err != nil {
 		return fmt.Errorf("error insertando en PARTY_RELATION para Ramo: %s, Npoliza: %s: %v", ctx.Ramo, ctx.Npoliza, err)
 	}

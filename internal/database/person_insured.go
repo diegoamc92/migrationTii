@@ -29,7 +29,7 @@ func InsertPersonInsured(db *sql.Tx, ctx *MigrationContext) error {
         PERSON_INSURED_TYPE_ID = VALUES(PERSON_INSURED_TYPE_ID);
     `
 
-	_, err := db.Exec(query, ctx.ContractID, ctx.NpolOri, ctx.Ramo, ctx.Npoliza)
+	_, err := db.Exec(query, ctx.ContractID, ctx.Npolori, ctx.Ramo, ctx.Npoliza)
 	if err != nil {
 		return fmt.Errorf("error insertando en PERSON_INSURED para Ramo: %s, Npoliza: %s: %v", ctx.Ramo, ctx.Npoliza, err)
 	}
