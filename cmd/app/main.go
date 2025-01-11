@@ -286,6 +286,16 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 
 		log.Printf("Procesando póliza: RAMO %s, NPOLIZA %s, NPOLORI %s", ctx.Ramo, ctx.Npoliza, ctx.NpolOri)
 
+		// Insertar titular en PERSON_INSURED
+		if err := database.InsertPersonInsured(tx, &context); err != nil { // `true` indica titular
+        	log.Fatalf("Error insertando titular en PERSON_INSURED: %v", err)
+    	}
+
+    	// Procesar adherentes
+    	if err := database.InsertAdherents(tx, &context); err != nil {
+        	log.Fatalf("Error insertando adherentes: %v", err)
+    	}
+
 		// Insertar en CONTRACT_HEADER
 		contractID, err := database.InsertContractHeaderForPoliza(tx, ctx)
 		if err != nil {
@@ -293,6 +303,22 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 			continue
 		}
 		ctx.ContractID = contractID // Actualizar el contexto con el ContractID
+
+		
+		// Crear PARTY_RELATION para relaciones titular-adherentes
+		if err := database.InsertPartyRelation(tx, &context); err != nil {
+    		log.Fatalf("Error insertando PARTY_RELATION: %v", err)
+		}
+
+		// Insertar titular en PERSON_INSURED
+		if err := database.InsertPersonInsured(tx, &context); err != nil { // `true` indica titular
+        	log.Fatalf("Error insertando titular en PERSON_INSURED: %v", err)
+    	}
+
+    	// Procesar adherentes
+    	if err := database.InsertAdherents(tx, &context); err != nil {
+        	log.Fatalf("Error insertando adherentes: %v", err)
+    	}
 
 		// Insertar en POLICY
 		if err := database.InsertIntoPolicy(tx, &ctx); err != nil {
@@ -545,10 +571,7 @@ func processPoliza(tx *sql.Tx, context database.MigrationContext) error {
 //	log.Println("Proceso completado correctamente.")
 //}
 //
-//func fileExists(filePath string) bool {
-//	_, err := os.Stat(filePath)
-//	return err == nil
-//}
+
 //
 //func handleError(err error, message string, r *report.Report) {
 //	if err != nil {
