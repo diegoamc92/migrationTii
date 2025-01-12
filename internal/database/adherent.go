@@ -19,7 +19,7 @@ func InsertAdherent(db *sql.Tx, ctx *MigrationContext) error {
         VALIDITY_FROM
     )
     SELECT
-        ROW_NUMBER() OVER (PARTITION BY t.NPOLIZA) AS ITEM_ID, -- Número incremental para ITEM_ID
+        1 AS ITEM_ID, -- Número incremental para ITEM_ID
         ? AS CONTRACT_ID,                                     -- CONTRACT_ID de la póliza
         p.PARTY_ID,                                           -- PARTY_ID de la carga
         CASE

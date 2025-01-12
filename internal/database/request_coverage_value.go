@@ -4,38 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 )
-
-func GetRequestIDs(db *sql.Tx, contractIDs []int64) ([]int64, error) {
-	query := `
-	SELECT REQUEST_ID
-	FROM REQUEST
-	WHERE CONTRACT_ID IN (?` + strings.Repeat(",?", len(contractIDs)-1) + `)
-	`
-	args := make([]interface{}, len(contractIDs))
-	for i, id := range contractIDs {
-		args[i] = id
-	}
-
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("error recuperando REQUEST_IDs: %v", err)
-	}
-	defer rows.Close()
-
-	var requestIDs []int64
-	for rows.Next() {
-		var requestID int64
-		if err := rows.Scan(&requestID); err != nil {
-			return nil, fmt.Errorf("error leyendo REQUEST_ID: %v", err)
-		}
-		requestIDs = append(requestIDs, requestID)
-	}
-
-	return requestIDs, nil
-}
-
 
 func InsertRequestCoverageValue(db *sql.Tx, ctx *MigrationContext) error {
 	query := `

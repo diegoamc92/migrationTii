@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// ProcessTXTFile procesa archivos TXT y crea tablas dinámicamente
+// Process TXTFile procesa archivos TXT y crea tablas dinámicamente
 func ProcessTXTFile(db *sql.DB, filePath string, tableName string) error {
 	file, err := os.Open(filePath)
 	if err != nil {

@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// MigrationContext representa los datos necesarios para migrar una póliza
+// Migration Context representa los datos necesarios para migrar una póliza
 type MigrationContext struct {
 	Npoliza        string
 	Npolori        string
@@ -83,6 +83,10 @@ func ProcessPoliza(tx *sql.Tx, context MigrationContext) error {
 	// Insertar PAYMENT_TERM
 	if err := InsertPaymentTerm(tx, context); err != nil {
 		return fmt.Errorf("error insertando PAYMENT_TERM: %v", err)
+	}
+
+	if err := CreateTempIssuanceDates(tx, context); err != nil {
+		return fmt.Errorf("error creando tabla temporal: %v", err)
 	}
 
 	// Insertar ADHERENT
